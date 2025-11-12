@@ -21,6 +21,8 @@ model User {
   invites            Invite[]
   guideId            String?  @unique
   guide              Guide?   @relation(fields: [guideId], references: [id])
+  paymentExceptions  PaymentException[]
+  cashHandovers      CashHandover[]
 }
 
 enum Role {
@@ -55,6 +57,7 @@ model Guide {
   tripGuides TripGuide[]
   ledTrips   Trip[]   @relation("TripLeader")
   user       User?
+  paymentExceptions PaymentException[]
 }
 
 enum GuideRank {
@@ -100,6 +103,7 @@ model Trip {
   payments        PaymentBreakdown?
   discounts       DiscountLine[]
   guides          TripGuide[]
+  paymentExceptions PaymentException[]
 }
 
 enum TripStatus {
@@ -163,4 +167,48 @@ model Setting {
   emailHourLocal  Int     @default(8)
   brandPrimary  String   @default("#0A66C2")
   brandAccent   String   @default("#0B84F3")
+}
+
+// --- GUIDE-ONLY APP: cash/card/eft exceptions + handover tracking ---
+enum ExceptionType {
+  CASH
+  CARD
+  EFT
+}
+
+model PaymentException {
+  id           String   @id @default(cuid())
+  guideId      String
+  guide        Guide    @relation(fields: [guideId], references: [id])
+  tripId       String?
+  trip         Trip?    @relation(fields: [tripId], references: [id])
+  type         ExceptionType
+  yocoRef      String?
+  bankRef      String?
+  amountHint   Decimal? @db.Decimal(10,2)
+  note         String?
+  createdById  String
+  createdBy    User     @relation(fields: [createdById], references: [id])
+  resolvedAt   DateTime?
+  resolution   String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  handover     CashHandover?
+
+  @@index([guideId])
+  @@index([tripId])
+  @@index([type])
+  @@index([resolvedAt])
+}
+
+model CashHandover {
+  id            String   @id @default(cuid())
+  exceptionId   String   @unique
+  exception     PaymentException @relation(fields: [exceptionId], references: [id])
+  receivedById  String
+  receivedBy    User     @relation(fields: [receivedById], references: [id])
+  receivedAt    DateTime @default(now())
+  countedAmount Decimal? @db.Decimal(10,2)
+  comment       String?
 }
