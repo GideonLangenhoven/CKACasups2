@@ -37,6 +37,16 @@ export async function POST(req: NextRequest) {
       return new Response('Month is required', { status: 400 });
     }
 
+    // Block invoices while unresolved exceptions exist
+    const openExceptions = await prisma.paymentException.count({
+      where: { guideId: userWithGuide.guideId, resolvedAt: null }
+    });
+    if (openExceptions > 0) {
+      return new Response(JSON.stringify({
+        error: `You have ${openExceptions} unresolved cash/card/EFT handover(s). Please hand over and let admin confirm first.`
+      }), { status: 409, headers: { "Content-Type": "application/json" } });
+    }
+
     const [year, monthNum] = month.split('-').map(Number);
     const startDate = new Date(Date.UTC(year, monthNum - 1, 1));
     const endDate = new Date(Date.UTC(year, monthNum, 0, 23, 59, 59, 999));
