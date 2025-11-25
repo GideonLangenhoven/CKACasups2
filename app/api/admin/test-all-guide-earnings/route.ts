@@ -144,13 +144,9 @@ export async function GET(req: NextRequest) {
               payments: {
                 create: {
                   cashReceived: 1000,
-                  creditCards: 0,
-                  onlineEFTs: 0,
-                  vouchers: 0,
-                  members: 0,
-                  agentsToInvoice: 0,
-                  waterPhoneSunblock: 0,
-                  discountsTotal: 0
+                  phonePouches: 0,
+                  waterSales: 0,
+                  sunglassesSales: 0
                 }
               },
               guides: {
