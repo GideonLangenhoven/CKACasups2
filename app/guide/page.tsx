@@ -25,8 +25,7 @@ export default async function GuideHome() {
         <p>Quick actions</p>
         <div className="row" style={{ gap: 12, flexWrap: "wrap" }}>
           <Link className="btn" href="/guide/cashups/new">➕ New cash up</Link>
-          <Link className="btn ghost" href="/trips">🧾 My trips</Link>
-          <Link className="btn ghost" href="/earnings">💼 Earnings</Link>
+          <Link className="btn ghost" href="/earnings">💼 My Earnings</Link>
           <Link className="btn ghost" href="/guide/cashups/new">💵 Cash / Card / EFT taken{openExceptions ? ` (${openExceptions})` : ""}</Link>
         </div>
       </div>
