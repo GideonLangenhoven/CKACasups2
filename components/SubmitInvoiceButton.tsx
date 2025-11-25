@@ -21,9 +21,41 @@ export function SubmitInvoiceButton() {
     return Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
   }
 
+  function getWeekDateRange(weekString: string): string {
+    if (!weekString || !weekString.includes('-W')) return '';
+
+    const [yearStr, weekStr] = weekString.split('-W');
+    const year = parseInt(yearStr);
+    const weekNum = parseInt(weekStr);
+
+    // Calculate start date of the week (Monday)
+    const jan4 = new Date(Date.UTC(year, 0, 4));
+    const jan4Day = jan4.getUTCDay() || 7;
+    const week1Monday = new Date(jan4);
+    week1Monday.setUTCDate(jan4.getUTCDate() - jan4Day + 1);
+
+    const startDate = new Date(week1Monday);
+    startDate.setUTCDate(week1Monday.getUTCDate() + (weekNum - 1) * 7);
+
+    const endDate = new Date(startDate);
+    endDate.setUTCDate(startDate.getUTCDate() + 6);
+
+    // Format date range
+    const startMonth = startDate.toLocaleDateString('en-US', { month: 'long' });
+    const endMonth = endDate.toLocaleDateString('en-US', { month: 'long' });
+    const startDay = startDate.getUTCDate();
+    const endDay = endDate.getUTCDate();
+
+    if (startMonth === endMonth) {
+      return `${startMonth} ${startDay} - ${endDay}, ${year}`;
+    } else {
+      return `${startMonth} ${startDay} - ${endMonth} ${endDay}, ${year}`;
+    }
+  }
+
   const handleSubmit = async () => {
     const period = invoiceType === 'monthly' ? selectedMonth : selectedWeek;
-    const periodLabel = invoiceType === 'monthly' ? `month ${selectedMonth}` : `week ${selectedWeek}`;
+    const periodLabel = invoiceType === 'monthly' ? selectedMonth : getWeekDateRange(selectedWeek);
 
     if (!confirm(`Submit ${invoiceType} invoice for ${periodLabel}?\n\nThis will send your invoice to the admin email.`)) {
       return;
@@ -112,6 +144,11 @@ export function SubmitInvoiceButton() {
                   disabled={loading}
                   max={`${new Date().getFullYear()}-W${String(getWeekNumber(new Date())).padStart(2, '0')}`}
                 />
+                {selectedWeek && (
+                  <div style={{ fontSize: '0.85rem', color: '#64748b', marginTop: 6 }}>
+                    {getWeekDateRange(selectedWeek)}
+                  </div>
+                )}
               </>
             )}
           </div>
