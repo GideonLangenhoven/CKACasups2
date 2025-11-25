@@ -87,7 +87,7 @@ export function EditTripFeeButton({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        zIndex: 1000
+        zIndex: 9999
       }}
       onClick={(e) => {
         if (e.target === e.currentTarget) {
