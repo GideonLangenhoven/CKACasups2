@@ -41,11 +41,9 @@ export async function GET(req: NextRequest) {
       { header: 'Guides (S/I/J counts)', key: 'guideCounts', width: 22 },
       { header: 'Guides (names)', key: 'guideNames', width: 36 },
       { header: 'Cash', key: 'cash', width: 10 },
-      { header: 'Cards', key: 'cards', width: 10 },
-      { header: 'EFTs', key: 'efts', width: 10 },
-      { header: 'Vouchers', key: 'vouchers', width: 10 },
-      { header: 'Members', key: 'members', width: 10 },
-      { header: 'Agents', key: 'agents', width: 10 },
+      { header: 'Phone Pouches', key: 'phonePouches', width: 14 },
+      { header: 'Water Sales', key: 'waterSales', width: 12 },
+      { header: 'Sunglasses Sales', key: 'sunglasses', width: 16 },
       { header: 'Discounts', key: 'discounts', width: 12 },
       { header: 'Pax Guide Notes', key: 'paxNote', width: 30 },
       { header: 'Created By', key: 'creator', width: 24 },
@@ -65,12 +63,10 @@ export async function GET(req: NextRequest) {
         guideCounts: `S:${counts.SENIOR} I:${counts.INTERMEDIATE} J:${counts.JUNIOR}`,
         guideNames: names,
         cash: t.payments?.cashReceived?.toString() || '0',
-        cards: t.payments?.creditCards?.toString() || '0',
-        efts: t.payments?.onlineEFTs?.toString() || '0',
-        vouchers: t.payments?.vouchers?.toString() || '0',
-        members: t.payments?.members?.toString() || '0',
-        agents: t.payments?.agentsToInvoice?.toString() || '0',
-        discounts: t.payments?.discountsTotal?.toString() || '0',
+        phonePouches: t.payments?.phonePouches?.toString() || '0',
+        waterSales: t.payments?.waterSales?.toString() || '0',
+        sunglasses: t.payments?.sunglassesSales?.toString() || '0',
+        discounts: t.discounts.reduce((sum: number, d: any) => sum + parseFloat(d.amount?.toString() || '0'), 0).toFixed(2),
         paxNote: (t as any).paxGuideNote || '',
         creator: t.createdBy?.email || ''
       });
@@ -125,14 +121,13 @@ export async function GET(req: NextRequest) {
       INTERMEDIATE: t.guides.filter((g: any)=>g.guide.rank==='INTERMEDIATE').length,
       JUNIOR: t.guides.filter((g: any)=>g.guide.rank==='JUNIOR').length,
     };
+    const discountTotal = t.discounts.reduce((sum: number, d: any) => sum + parseFloat(d.amount?.toString() || '0'), 0);
     const totalPayments = (
       parseFloat(t.payments?.cashReceived?.toString() || '0') +
-      parseFloat(t.payments?.creditCards?.toString() || '0') +
-      parseFloat(t.payments?.onlineEFTs?.toString() || '0') +
-      parseFloat(t.payments?.vouchers?.toString() || '0') +
-      parseFloat(t.payments?.members?.toString() || '0') +
-      parseFloat(t.payments?.agentsToInvoice?.toString() || '0') -
-      parseFloat(t.payments?.discountsTotal?.toString() || '0')
+      parseFloat(t.payments?.phonePouches?.toString() || '0') +
+      parseFloat(t.payments?.waterSales?.toString() || '0') +
+      parseFloat(t.payments?.sunglassesSales?.toString() || '0') -
+      discountTotal
     );
     body.push([
       new Date(t.tripDate).toISOString().slice(0,10),

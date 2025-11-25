@@ -136,29 +136,25 @@ export async function GET(req: NextRequest) {
   const totalTrips = trips.length;
   const totalCashCollected = trips.reduce((sum, t) => sum + parseFloat(t.payments?.cashReceived?.toString() || '0'), 0);
   const totalAllPayments = trips.reduce((sum, t) => {
+    const discountTotal = t.discounts.reduce((sum: number, d: any) => sum + parseFloat(d.amount?.toString() || '0'), 0);
     return sum +
       parseFloat(t.payments?.cashReceived?.toString() || '0') +
-      parseFloat(t.payments?.creditCards?.toString() || '0') +
-      parseFloat(t.payments?.onlineEFTs?.toString() || '0') +
-      parseFloat(t.payments?.vouchers?.toString() || '0') +
-      parseFloat(t.payments?.members?.toString() || '0') +
-      parseFloat(t.payments?.agentsToInvoice?.toString() || '0') +
-      parseFloat(t.payments?.waterPhoneSunblock?.toString() || '0') -
-      parseFloat(t.payments?.discountsTotal?.toString() || '0');
+      parseFloat(t.payments?.phonePouches?.toString() || '0') +
+      parseFloat(t.payments?.waterSales?.toString() || '0') +
+      parseFloat(t.payments?.sunglassesSales?.toString() || '0') -
+      discountTotal;
   }, 0);
 
   // Calculate daily totals
   const dailyTotals = new Map<string, number>();
   for (const trip of trips) {
     const dateStr = new Date(trip.tripDate).toISOString().slice(0, 10);
+    const discountTotal = trip.discounts.reduce((sum: number, d: any) => sum + parseFloat(d.amount?.toString() || '0'), 0);
     const total = parseFloat(trip.payments?.cashReceived?.toString() || '0') +
-      parseFloat(trip.payments?.creditCards?.toString() || '0') +
-      parseFloat(trip.payments?.onlineEFTs?.toString() || '0') +
-      parseFloat(trip.payments?.vouchers?.toString() || '0') +
-      parseFloat(trip.payments?.members?.toString() || '0') +
-      parseFloat(trip.payments?.agentsToInvoice?.toString() || '0') +
-      parseFloat(trip.payments?.waterPhoneSunblock?.toString() || '0') -
-      parseFloat(trip.payments?.discountsTotal?.toString() || '0');
+      parseFloat(trip.payments?.phonePouches?.toString() || '0') +
+      parseFloat(trip.payments?.waterSales?.toString() || '0') +
+      parseFloat(trip.payments?.sunglassesSales?.toString() || '0') -
+      discountTotal;
     dailyTotals.set(dateStr, (dailyTotals.get(dateStr) || 0) + total);
   }
 
@@ -286,15 +282,13 @@ export async function GET(req: NextRequest) {
           INTERMEDIATE: t.guides.filter((g: any)=>g.guide.rank==='INTERMEDIATE').length,
           JUNIOR: t.guides.filter((g: any)=>g.guide.rank==='JUNIOR').length,
         };
+        const discountTotal = t.discounts.reduce((sum: number, d: any) => sum + parseFloat(d.amount?.toString() || '0'), 0);
         const totalPayments = (
           parseFloat(t.payments?.cashReceived?.toString() || '0') +
-          parseFloat(t.payments?.creditCards?.toString() || '0') +
-          parseFloat(t.payments?.onlineEFTs?.toString() || '0') +
-          parseFloat(t.payments?.vouchers?.toString() || '0') +
-          parseFloat(t.payments?.members?.toString() || '0') +
-          parseFloat(t.payments?.agentsToInvoice?.toString() || '0') +
-          parseFloat(t.payments?.waterPhoneSunblock?.toString() || '0') -
-          parseFloat(t.payments?.discountsTotal?.toString() || '0')
+          parseFloat(t.payments?.phonePouches?.toString() || '0') +
+          parseFloat(t.payments?.waterSales?.toString() || '0') +
+          parseFloat(t.payments?.sunglassesSales?.toString() || '0') -
+          discountTotal
         );
         runningTotal += totalPayments;
         const submittedTime = new Date(t.createdAt).toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit', hour12: false });
@@ -386,6 +380,11 @@ export async function GET(req: NextRequest) {
     { header: 'Lead', key: 'leadName', width: 20 },
     { header: 'Pax', key: 'pax', width: 10 },
     { header: 'Guides', key: 'guides', width: 15 },
+    { header: 'Cash', key: 'cash', width: 12 },
+    { header: 'Phone Pouches', key: 'phonePouches', width: 14 },
+    { header: 'Water Sales', key: 'waterSales', width: 12 },
+    { header: 'Sunglasses Sales', key: 'sunglasses', width: 16 },
+    { header: 'Discounts', key: 'discounts', width: 12 },
     { header: 'Total', key: 'total', width: 12 },
     { header: 'Running Total', key: 'runningTotal', width: 15 }
   ];
@@ -397,14 +396,13 @@ export async function GET(req: NextRequest) {
       INTERMEDIATE: t.guides.filter((g: any)=>g.guide.rank==='INTERMEDIATE').length,
       JUNIOR: t.guides.filter((g: any)=>g.guide.rank==='JUNIOR').length,
     };
+    const discountTotal = t.discounts.reduce((sum: number, d: any) => sum + parseFloat(d.amount?.toString() || '0'), 0);
     const totalPayments = (
       parseFloat(t.payments?.cashReceived?.toString() || '0') +
-      parseFloat(t.payments?.creditCards?.toString() || '0') +
-      parseFloat(t.payments?.onlineEFTs?.toString() || '0') +
-      parseFloat(t.payments?.vouchers?.toString() || '0') +
-      parseFloat(t.payments?.members?.toString() || '0') +
-      parseFloat(t.payments?.agentsToInvoice?.toString() || '0') -
-      parseFloat(t.payments?.discountsTotal?.toString() || '0')
+      parseFloat(t.payments?.phonePouches?.toString() || '0') +
+      parseFloat(t.payments?.waterSales?.toString() || '0') +
+      parseFloat(t.payments?.sunglassesSales?.toString() || '0') -
+      discountTotal
     );
     excelRunningTotal += totalPayments;
 
@@ -413,6 +411,11 @@ export async function GET(req: NextRequest) {
       leadName: t.leadName,
       pax: t.totalPax,
       guides: `S:${counts.SENIOR} I:${counts.INTERMEDIATE} J:${counts.JUNIOR}`,
+      cash: t.payments?.cashReceived?.toString() || '0',
+      phonePouches: t.payments?.phonePouches?.toString() || '0',
+      waterSales: t.payments?.waterSales?.toString() || '0',
+      sunglasses: t.payments?.sunglassesSales?.toString() || '0',
+      discounts: discountTotal.toFixed(2),
       total: totalPayments.toFixed(2),
       runningTotal: excelRunningTotal.toFixed(2)
     });

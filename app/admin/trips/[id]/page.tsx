@@ -247,32 +247,16 @@ export default function AdminTripReviewPage() {
               <div>R {trip.payments.cashReceived.toString()}</div>
             </div>
             <div>
-              <div style={{ fontSize: '0.85rem', color: '#666', marginBottom: 4 }}>Credit Cards</div>
-              <div>R {trip.payments.creditCards.toString()}</div>
+              <div style={{ fontSize: '0.85rem', color: '#666', marginBottom: 4 }}>Phone Pouches</div>
+              <div>R {(trip.payments.phonePouches || 0).toString()}</div>
             </div>
             <div>
-              <div style={{ fontSize: '0.85rem', color: '#666', marginBottom: 4 }}>Online EFTs</div>
-              <div>R {trip.payments.onlineEFTs.toString()}</div>
+              <div style={{ fontSize: '0.85rem', color: '#666', marginBottom: 4 }}>Water Sales</div>
+              <div>R {(trip.payments.waterSales || 0).toString()}</div>
             </div>
             <div>
-              <div style={{ fontSize: '0.85rem', color: '#666', marginBottom: 4 }}>Vouchers</div>
-              <div>R {trip.payments.vouchers.toString()}</div>
-            </div>
-            <div>
-              <div style={{ fontSize: '0.85rem', color: '#666', marginBottom: 4 }}>Members</div>
-              <div>R {trip.payments.members.toString()}</div>
-            </div>
-            <div>
-              <div style={{ fontSize: '0.85rem', color: '#666', marginBottom: 4 }}>Agents to Invoice</div>
-              <div>R {trip.payments.agentsToInvoice.toString()}</div>
-            </div>
-            <div>
-              <div style={{ fontSize: '0.85rem', color: '#666', marginBottom: 4 }}>Water, Phone & Sunblock</div>
-              <div>R {(trip.payments.waterPhoneSunblock || 0).toString()}</div>
-            </div>
-            <div>
-              <div style={{ fontSize: '0.85rem', color: '#666', marginBottom: 4 }}>Discounts Total</div>
-              <div>R {trip.payments.discountsTotal.toString()}</div>
+              <div style={{ fontSize: '0.85rem', color: '#666', marginBottom: 4 }}>Sunglasses Sales</div>
+              <div>R {(trip.payments.sunglassesSales || 0).toString()}</div>
             </div>
           </div>
           {trip.discounts && trip.discounts.length > 0 && (

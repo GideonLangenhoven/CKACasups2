@@ -24,12 +24,9 @@ export default function AdminTripEditPage() {
   const [selectedGuides, setSelectedGuides] = useState<string[]>([]);
 
   const [cashReceived, setCashReceived] = useState<string>("");
-  const [creditCards, setCreditCards] = useState<string>("");
-  const [onlineEFTs, setOnlineEFTs] = useState<string>("");
-  const [vouchers, setVouchers] = useState<string>("");
-  const [members, setMembers] = useState<string>("");
-  const [agentsToInvoice, setAgentsToInvoice] = useState<string>("");
-  const [waterPhoneSunblock, setWaterPhoneSunblock] = useState<string>("");
+  const [phonePouches, setPhonePouches] = useState<string>("");
+  const [waterSales, setWaterSales] = useState<string>("");
+  const [sunglassesSales, setSunglassesSales] = useState<string>("");
   const [discounts, setDiscounts] = useState<{amount: string; reason: string}[]>([]);
   const [paymentsMadeYN, setPaymentsMadeYN] = useState<boolean>(false);
   const [picsUploadedYN, setPicsUploadedYN] = useState<boolean>(false);
@@ -75,12 +72,9 @@ export default function AdminTripEditPage() {
 
         if (trip.payments) {
           setCashReceived(trip.payments.cashReceived.toString());
-          setCreditCards(trip.payments.creditCards.toString());
-          setOnlineEFTs(trip.payments.onlineEFTs.toString());
-          setVouchers(trip.payments.vouchers.toString());
-          setMembers(trip.payments.members.toString());
-          setAgentsToInvoice(trip.payments.agentsToInvoice.toString());
-          setWaterPhoneSunblock(trip.payments.waterPhoneSunblock?.toString() || "0");
+          setPhonePouches(trip.payments.phonePouches?.toString() || "0");
+          setWaterSales(trip.payments.waterSales?.toString() || "0");
+          setSunglassesSales(trip.payments.sunglassesSales?.toString() || "0");
         }
 
         setPaymentsMadeYN(trip.paymentsMadeYN);
@@ -109,11 +103,9 @@ export default function AdminTripEditPage() {
   async function saveChanges() {
     const paymentFields = [
       { name: 'Cash received', value: cashReceived },
-      { name: 'Credit cards', value: creditCards },
-      { name: 'Online EFTs', value: onlineEFTs },
-      { name: 'Vouchers', value: vouchers },
-      { name: 'Members', value: members },
-      { name: 'Agents to invoice', value: agentsToInvoice }
+      { name: 'Phone pouches', value: phonePouches },
+      { name: 'Water sales', value: waterSales },
+      { name: 'Sunglasses sales', value: sunglassesSales }
     ];
 
     for (const field of paymentFields) {
@@ -147,13 +139,9 @@ export default function AdminTripEditPage() {
         guides: selectedGuides.map(guideId => ({ guideId, pax: 0 })),
         payments: {
           cashReceived: parseFloat(cashReceived || "0"),
-          creditCards: parseFloat(creditCards || "0"),
-          onlineEFTs: parseFloat(onlineEFTs || "0"),
-          vouchers: parseFloat(vouchers || "0"),
-          members: parseFloat(members || "0"),
-          agentsToInvoice: parseFloat(agentsToInvoice || "0"),
-          waterPhoneSunblock: parseFloat(waterPhoneSunblock || "0"),
-          discountsTotal: parseFloat(discountTotal.toFixed(2))
+          phonePouches: parseFloat(phonePouches || "0"),
+          waterSales: parseFloat(waterSales || "0"),
+          sunglassesSales: parseFloat(sunglassesSales || "0")
         },
         discounts
       };
@@ -321,62 +309,32 @@ export default function AdminTripEditPage() {
             />
           </div>
           <div>
-            <label className="label">Credit cards (R)</label>
+            <label className="label">Phone pouches (R)</label>
             <input
               className="input"
               inputMode="decimal"
-              value={creditCards}
-              onChange={e => setCreditCards(e.target.value)}
+              value={phonePouches}
+              onChange={e => setPhonePouches(e.target.value)}
               placeholder="Numbers only"
             />
           </div>
           <div>
-            <label className="label">Online EFTs (R)</label>
+            <label className="label">Water sales (R)</label>
             <input
               className="input"
               inputMode="decimal"
-              value={onlineEFTs}
-              onChange={e => setOnlineEFTs(e.target.value)}
+              value={waterSales}
+              onChange={e => setWaterSales(e.target.value)}
               placeholder="Numbers only"
             />
           </div>
           <div>
-            <label className="label">Vouchers (R)</label>
+            <label className="label">Sunglasses sales (R)</label>
             <input
               className="input"
               inputMode="decimal"
-              value={vouchers}
-              onChange={e => setVouchers(e.target.value)}
-              placeholder="Numbers only"
-            />
-          </div>
-          <div>
-            <label className="label">Members (R)</label>
-            <input
-              className="input"
-              inputMode="decimal"
-              value={members}
-              onChange={e => setMembers(e.target.value)}
-              placeholder="Numbers only"
-            />
-          </div>
-          <div>
-            <label className="label">Agents to invoice (R)</label>
-            <input
-              className="input"
-              inputMode="decimal"
-              value={agentsToInvoice}
-              onChange={e => setAgentsToInvoice(e.target.value)}
-              placeholder="Numbers only"
-            />
-          </div>
-          <div>
-            <label className="label">Water, Phone Cases & Sunblock (R)</label>
-            <input
-              className="input"
-              inputMode="decimal"
-              value={waterPhoneSunblock}
-              onChange={e => setWaterPhoneSunblock(e.target.value)}
+              value={sunglassesSales}
+              onChange={e => setSunglassesSales(e.target.value)}
               placeholder="Numbers only"
             />
           </div>

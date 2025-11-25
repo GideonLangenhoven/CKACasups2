@@ -43,7 +43,7 @@ export async function GET(_req: NextRequest) {
     "Land on New Cash Up (/trips/new) after sign-in",
     "Step 1: Choose trip date/time, enter lead name, optional notes",
     "Step 2: Select guides by rank and enter total pax",
-    "Step 3: Capture payments (cash, cards, EFTs, vouchers, members, agents), add discounts, set flags, add suggestions",
+    "Step 3: Capture payments (cash received, phone pouches, water sales, sunglasses sales), add discounts, set flags, add suggestions",
     "Submit to create a Trip; view it in My Trips",
     "Open trip detail to review and optionally Download PDF",
   ]});

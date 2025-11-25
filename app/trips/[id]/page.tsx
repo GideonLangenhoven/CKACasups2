@@ -55,12 +55,9 @@ export default async function TripDetail({ params }: { params: { id: string }}) 
         {trip.payments && (
           <div className="stack">
             <div>Cash received: R {trip.payments.cashReceived.toString()}</div>
-            <div>Credit cards: R {trip.payments.creditCards.toString()}</div>
-            <div>Online EFTs: R {trip.payments.onlineEFTs.toString()}</div>
-            <div>Vouchers: R {trip.payments.vouchers.toString()}</div>
-            <div>Members: R {trip.payments.members.toString()}</div>
-            <div>Agents to invoice: R {trip.payments.agentsToInvoice.toString()}</div>
-            <div>Discounts total: R {trip.payments.discountsTotal.toString()}</div>
+            <div>Phone pouches: R {(trip.payments.phonePouches || 0).toString()}</div>
+            <div>Water sales: R {(trip.payments.waterSales || 0).toString()}</div>
+            <div>Sunglasses sales: R {(trip.payments.sunglassesSales || 0).toString()}</div>
           </div>
         )}
         <div className="section-title">Discount lines</div>

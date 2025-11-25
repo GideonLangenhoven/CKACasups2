@@ -28,12 +28,9 @@ export default function EditTripPage() {
   const [selectedGuides, setSelectedGuides] = useState<string[]>([]);
 
   const [cashReceived, setCashReceived] = useState<string>("");
-  const [creditCards, setCreditCards] = useState<string>("");
-  const [onlineEFTs, setOnlineEFTs] = useState<string>("");
-  const [vouchers, setVouchers] = useState<string>("");
-  const [members, setMembers] = useState<string>("");
-  const [agentsToInvoice, setAgentsToInvoice] = useState<string>("");
-  const [waterPhoneSunblock, setWaterPhoneSunblock] = useState<string>("");
+  const [phonePouches, setPhonePouches] = useState<string>("");
+  const [waterSales, setWaterSales] = useState<string>("");
+  const [sunglassesSales, setSunglassesSales] = useState<string>("");
   const [discounts, setDiscounts] = useState<{amount: string; reason: string}[]>([]);
   const [paymentsMadeYN, setPaymentsMadeYN] = useState<boolean>(false);
   const [picsUploadedYN, setPicsUploadedYN] = useState<boolean>(false);
@@ -88,12 +85,9 @@ export default function EditTripPage() {
         // Populate payment fields
         if (trip.payments) {
           setCashReceived(trip.payments.cashReceived.toString());
-          setCreditCards(trip.payments.creditCards.toString());
-          setOnlineEFTs(trip.payments.onlineEFTs.toString());
-          setVouchers(trip.payments.vouchers.toString());
-          setMembers(trip.payments.members.toString());
-          setAgentsToInvoice(trip.payments.agentsToInvoice.toString());
-          setWaterPhoneSunblock(trip.payments.waterPhoneSunblock?.toString() || "0");
+          setPhonePouches(trip.payments.phonePouches?.toString() || "0");
+          setWaterSales(trip.payments.waterSales?.toString() || "0");
+          setSunglassesSales(trip.payments.sunglassesSales?.toString() || "0");
         }
 
         // Populate checkboxes and text fields
@@ -126,11 +120,9 @@ export default function EditTripPage() {
     // Validate payment fields are numbers
     const paymentFields = [
       { name: 'Cash received', value: cashReceived },
-      { name: 'Credit cards', value: creditCards },
-      { name: 'Online EFTs', value: onlineEFTs },
-      { name: 'Vouchers', value: vouchers },
-      { name: 'Members', value: members },
-      { name: 'Agents to invoice', value: agentsToInvoice }
+      { name: 'Phone pouches', value: phonePouches },
+      { name: 'Water sales', value: waterSales },
+      { name: 'Sunglasses sales', value: sunglassesSales }
     ];
 
     for (const field of paymentFields) {
@@ -163,13 +155,9 @@ export default function EditTripPage() {
       guides: selectedGuides.map(guideId => ({ guideId, pax: 0 })),
       payments: {
         cashReceived: parseFloat(cashReceived || "0"),
-        creditCards: parseFloat(creditCards || "0"),
-        onlineEFTs: parseFloat(onlineEFTs || "0"),
-        vouchers: parseFloat(vouchers || "0"),
-        members: parseFloat(members || "0"),
-        agentsToInvoice: parseFloat(agentsToInvoice || "0"),
-        waterPhoneSunblock: parseFloat(waterPhoneSunblock || "0"),
-        discountsTotal: parseFloat(discountTotal.toFixed(2))
+        phonePouches: parseFloat(phonePouches || "0"),
+        waterSales: parseFloat(waterSales || "0"),
+        sunglassesSales: parseFloat(sunglassesSales || "0")
       },
       discounts
     };
@@ -296,34 +284,18 @@ export default function EditTripPage() {
               <input className="input" inputMode="decimal" value={cashReceived} onChange={e=>setCashReceived(e.target.value)} placeholder="Numbers only" />
             </div>
             <div className="payment-field" style={{ width: '35%' }}>
-              <label className="label" style={{ marginBottom: 6, display: 'block' }}>Credit cards (R)</label>
-              <input className="input" inputMode="decimal" value={creditCards} onChange={e=>setCreditCards(e.target.value)} placeholder="Numbers only" />
+              <label className="label" style={{ marginBottom: 6, display: 'block' }}>Phone pouches (R)</label>
+              <input className="input" inputMode="decimal" value={phonePouches} onChange={e=>setPhonePouches(e.target.value)} placeholder="Numbers only" />
             </div>
           </div>
           <div className="payment-row" style={{ display: 'flex', gap: '20px', marginBottom: '20px' }}>
             <div className="payment-field" style={{ width: '35%' }}>
-              <label className="label" style={{ marginBottom: 6, display: 'block' }}>Online EFTs (R)</label>
-              <input className="input" inputMode="decimal" value={onlineEFTs} onChange={e=>setOnlineEFTs(e.target.value)} placeholder="Numbers only" />
+              <label className="label" style={{ marginBottom: 6, display: 'block' }}>Water sales (R)</label>
+              <input className="input" inputMode="decimal" value={waterSales} onChange={e=>setWaterSales(e.target.value)} placeholder="Numbers only" />
             </div>
             <div className="payment-field" style={{ width: '35%' }}>
-              <label className="label" style={{ marginBottom: 6, display: 'block' }}>Vouchers (R)</label>
-              <input className="input" inputMode="decimal" value={vouchers} onChange={e=>setVouchers(e.target.value)} placeholder="Numbers only" />
-            </div>
-          </div>
-          <div className="payment-row" style={{ display: 'flex', gap: '20px', marginBottom: '20px' }}>
-            <div className="payment-field" style={{ width: '35%' }}>
-              <label className="label" style={{ marginBottom: 6, display: 'block' }}>Members (R)</label>
-              <input className="input" inputMode="decimal" value={members} onChange={e=>setMembers(e.target.value)} placeholder="Numbers only" />
-            </div>
-            <div className="payment-field" style={{ width: '35%' }}>
-              <label className="label" style={{ marginBottom: 6, display: 'block' }}>Agents to invoice (R)</label>
-              <input className="input" inputMode="decimal" value={agentsToInvoice} onChange={e=>setAgentsToInvoice(e.target.value)} placeholder="Numbers only" />
-            </div>
-          </div>
-          <div className="payment-row" style={{ display: 'flex', gap: '20px', marginBottom: '20px' }}>
-            <div className="payment-field" style={{ width: '35%' }}>
-              <label className="label" style={{ marginBottom: 6, display: 'block' }}>Water, Phone Cases & Sunblock (R)</label>
-              <input className="input" inputMode="decimal" value={waterPhoneSunblock} onChange={e=>setWaterPhoneSunblock(e.target.value)} placeholder="Numbers only" />
+              <label className="label" style={{ marginBottom: 6, display: 'block' }}>Sunglasses sales (R)</label>
+              <input className="input" inputMode="decimal" value={sunglassesSales} onChange={e=>setSunglassesSales(e.target.value)} placeholder="Numbers only" />
             </div>
           </div>
           <div className="section-title">Discounts</div>
