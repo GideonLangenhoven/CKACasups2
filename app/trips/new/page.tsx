@@ -25,14 +25,11 @@ export default function NewTripPage() {
   const [phonePouches, setPhonePouches] = useState<string>("");
   const [waterSales, setWaterSales] = useState<string>("");
   const [sunglassesSales, setSunglassesSales] = useState<string>("");
-  const [discounts, setDiscounts] = useState<{amount: string; reason: string}[]>([]);
   const [paymentsMadeYN, setPaymentsMadeYN] = useState<boolean>(false);
   const [picsUploadedYN, setPicsUploadedYN] = useState<boolean>(false);
   const [tripEmailSentYN, setTripEmailSentYN] = useState<boolean>(false);
   const [tripReport, setTripReport] = useState<string>("");
   const [suggestions, setSuggestions] = useState<string>("");
-
-  const discountTotal = useMemo(() => discounts.reduce((s, d) => s + (parseFloat(d.amount || "0") || 0), 0), [discounts]);
   const rankCounts = useMemo(() => {
     const getRank = (id: string) => guides.find(g => g.id === id)?.rank;
     return selectedGuides.reduce((acc, guideId) => {
@@ -78,7 +75,6 @@ export default function NewTripPage() {
         setPhonePouches(d.phonePouches || "");
         setWaterSales(d.waterSales || "");
         setSunglassesSales(d.sunglassesSales || "");
-        setDiscounts(d.discounts || []);
         setPaymentsMadeYN(!!d.paymentsMadeYN);
         setPicsUploadedYN(!!d.picsUploadedYN);
         setTripEmailSentYN(!!d.tripEmailSentYN);
@@ -91,9 +87,9 @@ export default function NewTripPage() {
   }, []);
 
   useEffect(() => {
-    const payload = { tripDate, tripTime, leadName, paxGuideNote, totalPax, selectedGuides, cashReceived, phonePouches, waterSales, sunglassesSales, discounts, paymentsMadeYN, picsUploadedYN, tripEmailSentYN, tripReport, suggestions };
+    const payload = { tripDate, tripTime, leadName, paxGuideNote, totalPax, selectedGuides, cashReceived, phonePouches, waterSales, sunglassesSales, paymentsMadeYN, picsUploadedYN, tripEmailSentYN, tripReport, suggestions };
     localStorage.setItem('cashup-draft', JSON.stringify(payload));
-  }, [tripDate, tripTime, leadName, paxGuideNote, totalPax, selectedGuides, cashReceived, phonePouches, waterSales, sunglassesSales, discounts, paymentsMadeYN, picsUploadedYN, tripEmailSentYN, tripReport, suggestions]);
+  }, [tripDate, tripTime, leadName, paxGuideNote, totalPax, selectedGuides, cashReceived, phonePouches, waterSales, sunglassesSales, paymentsMadeYN, picsUploadedYN, tripEmailSentYN, tripReport, suggestions]);
 
   function toggleGuide(id: string) {
     setSelectedGuides((prev) => {
@@ -124,14 +120,6 @@ export default function NewTripPage() {
       }
     }
 
-    // Validate discount amounts
-    for (let i = 0; i < discounts.length; i++) {
-      if (discounts[i].amount && isNaN(parseFloat(discounts[i].amount))) {
-        alert(`Error: Discount #${i + 1} amount must be a number. Please enter numbers only (e.g., 50 or 50.00)`);
-        return;
-      }
-    }
-
     const payload = {
       tripDate,
       leadName,
@@ -151,7 +139,7 @@ export default function NewTripPage() {
         waterSales: parseFloat(waterSales || "0"),
         sunglassesSales: parseFloat(sunglassesSales || "0")
       },
-      discounts
+      discounts: []
     };
     const res = await fetch('/api/trips', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
     if (res.ok) {
@@ -298,19 +286,6 @@ export default function NewTripPage() {
               <input className="input" inputMode="decimal" value={sunglassesSales} onChange={e=>setSunglassesSales(e.target.value)} placeholder="Numbers only" />
             </div>
           </div>
-          <div className="section-title">Discounts</div>
-          {discounts.map((d, idx) => (
-            <div className="row" key={idx}>
-              <input className="input" placeholder="Amount (R) - Numbers only" inputMode="decimal" value={d.amount} onChange={e=>{
-                const v = e.target.value; setDiscounts(prev=>prev.map((x,i)=>i===idx?{...x, amount: v}:x));
-              }} />
-              <input className="input" placeholder="Reason" value={d.reason} onChange={e=>{
-                const v = e.target.value; setDiscounts(prev=>prev.map((x,i)=>i===idx?{...x, reason: v}:x));
-              }} />
-              <button className="btn ghost" onClick={()=>setDiscounts(prev=>prev.filter((_,i)=>i!==idx))}>Remove</button>
-            </div>
-          ))}
-          <div className="row"><button className="btn secondary" onClick={()=>setDiscounts(prev=>[...prev,{amount:"0", reason:""}])}>Add discount</button><div>Discounts total: <strong>R {discountTotal.toFixed(2)}</strong></div></div>
           <div className="section-title">Additional Checks</div>
           <label className="row"><input type="checkbox" checked={paymentsMadeYN} onChange={e=>setPaymentsMadeYN(e.target.checked)} /> All payments in Activitar</label>
           <label className="row"><input type="checkbox" checked={picsUploadedYN} onChange={e=>setPicsUploadedYN(e.target.checked)} /> Facebook pictures uploaded</label>
