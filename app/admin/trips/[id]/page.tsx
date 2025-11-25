@@ -70,8 +70,6 @@ export default function AdminTripReviewPage() {
     );
   }
 
-  const canApprove = trip.status === 'SUBMITTED' || trip.status === 'DRAFT';
-
   return (
     <div className="stack">
       <AdminNav />
@@ -120,29 +118,25 @@ export default function AdminTripReviewPage() {
 
         <div style={{
           padding: '16px',
-          backgroundColor: canApprove ? '#dbeafe' : '#f3f4f6',
+          backgroundColor: '#f3f4f6',
           borderRadius: '8px',
           marginBottom: 24
         }}>
           <div style={{ fontWeight: 600, marginBottom: 12, fontSize: '1rem' }}>
-            {canApprove ? 'Review and Approve' : 'Change Status'}
+            Manage Trip Status
           </div>
-          {canApprove && (
-            <div style={{ marginBottom: 12, color: '#1e40af', fontSize: '0.9rem' }}>
-              Review all trip details above. You can edit the cash up before approving if changes are needed.
-            </div>
-          )}
+          <div style={{ marginBottom: 12, color: '#64748b', fontSize: '0.9rem' }}>
+            Trips are automatically approved when logged. You can change the status if needed.
+          </div>
           <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
-            {canApprove && (
-              <button
-                className="btn"
-                disabled={updating}
-                onClick={() => updateStatus('APPROVED')}
-                style={{ backgroundColor: '#16a34a', borderColor: '#16a34a' }}
-              >
-                ✓ Approve
-              </button>
-            )}
+            <button
+              className="btn"
+              disabled={updating || trip.status === 'APPROVED'}
+              onClick={() => updateStatus('APPROVED')}
+              style={{ backgroundColor: '#16a34a', borderColor: '#16a34a' }}
+            >
+              ✓ Approve
+            </button>
             <button
               className="btn ghost"
               disabled={updating || trip.status === 'REJECTED'}
@@ -156,17 +150,15 @@ export default function AdminTripReviewPage() {
               disabled={updating || trip.status === 'LOCKED'}
               onClick={() => updateStatus('LOCKED')}
             >
-              Lock
+              🔒 Lock
             </button>
-            {trip.status === 'APPROVED' && (
-              <button
-                className="btn ghost"
-                disabled={updating}
-                onClick={() => updateStatus('SUBMITTED')}
-              >
-                Revert to Submitted
-              </button>
-            )}
+            <button
+              className="btn ghost"
+              disabled={updating || trip.status === 'DRAFT'}
+              onClick={() => updateStatus('DRAFT')}
+            >
+              📝 Set to Draft
+            </button>
           </div>
         </div>
       </div>

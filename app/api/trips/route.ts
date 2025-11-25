@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
         tripEmailSentYN: !!tripEmailSentYN,
         tripReport,
         suggestions,
-        status: status || 'DRAFT',
+        status: status || 'APPROVED',
         createdById: user.id,
         payments: payments ? { create: payments } : undefined,
         discounts: discounts && discounts.length ? { create: discounts.map((d: any) => ({ amount: d.amount, reason: d.reason })) } : undefined,
