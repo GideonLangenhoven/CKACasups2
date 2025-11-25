@@ -74,7 +74,17 @@ export async function POST(req: NextRequest) {
       endDate.setUTCDate(startDate.getUTCDate() + 6);
       endDate.setUTCHours(23, 59, 59, 999);
 
-      periodLabel = `Week ${weekNum}, ${year}`;
+      // Format date range label
+      const startMonth = startDate.toLocaleDateString('en-US', { month: 'long' });
+      const endMonth = endDate.toLocaleDateString('en-US', { month: 'long' });
+      const startDay = startDate.getUTCDate();
+      const endDay = endDate.getUTCDate();
+
+      if (startMonth === endMonth) {
+        periodLabel = `${startMonth} ${startDay} - ${endDay}, ${year}`;
+      } else {
+        periodLabel = `${startMonth} ${startDay} - ${endMonth} ${endDay}, ${year}`;
+      }
     } else {
       // Monthly invoice
       const [year, monthNum] = month.split('-').map(Number);
