@@ -32,9 +32,13 @@ export async function POST(req: NextRequest) {
       return new Response('You are not linked to a guide profile', { status: 403 });
     }
 
-    const { month } = await req.json(); // Format: YYYY-MM
-    if (!month) {
-      return new Response('Month is required', { status: 400 });
+    const { invoiceType = 'monthly', month, week } = await req.json();
+
+    if (invoiceType === 'monthly' && !month) {
+      return new Response('Month is required for monthly invoices', { status: 400 });
+    }
+    if (invoiceType === 'weekly' && !week) {
+      return new Response('Week is required for weekly invoices', { status: 400 });
     }
 
     // Block invoices while unresolved exceptions exist
@@ -47,9 +51,37 @@ export async function POST(req: NextRequest) {
       }), { status: 409, headers: { "Content-Type": "application/json" } });
     }
 
-    const [year, monthNum] = month.split('-').map(Number);
-    const startDate = new Date(Date.UTC(year, monthNum - 1, 1));
-    const endDate = new Date(Date.UTC(year, monthNum, 0, 23, 59, 59, 999));
+    let startDate: Date;
+    let endDate: Date;
+    let periodLabel: string;
+
+    if (invoiceType === 'weekly') {
+      // Parse week format: YYYY-Wnn
+      const [yearStr, weekStr] = week.split('-W');
+      const year = parseInt(yearStr);
+      const weekNum = parseInt(weekStr);
+
+      // Calculate start date of the week (Monday)
+      const jan4 = new Date(Date.UTC(year, 0, 4));
+      const jan4Day = jan4.getUTCDay() || 7;
+      const week1Monday = new Date(jan4);
+      week1Monday.setUTCDate(jan4.getUTCDate() - jan4Day + 1);
+
+      startDate = new Date(week1Monday);
+      startDate.setUTCDate(week1Monday.getUTCDate() + (weekNum - 1) * 7);
+
+      endDate = new Date(startDate);
+      endDate.setUTCDate(startDate.getUTCDate() + 6);
+      endDate.setUTCHours(23, 59, 59, 999);
+
+      periodLabel = `Week ${weekNum}, ${year}`;
+    } else {
+      // Monthly invoice
+      const [year, monthNum] = month.split('-').map(Number);
+      startDate = new Date(Date.UTC(year, monthNum - 1, 1));
+      endDate = new Date(Date.UTC(year, monthNum, 0, 23, 59, 59, 999));
+      periodLabel = month;
+    }
 
     // Get all trips for this guide in the specified month
     const trips = await prisma.trip.findMany({
@@ -75,11 +107,12 @@ export async function POST(req: NextRequest) {
     });
 
     if (trips.length === 0) {
-      return new Response('No trips found for this month', { status: 404 });
+      return new Response(`No trips found for this ${invoiceType === 'weekly' ? 'week' : 'month'}`, { status: 404 });
     }
 
-    // Calculate totals by week and month
+    // Calculate totals (by week for monthly invoices, by day for weekly invoices)
     const weeklyTotals = new Map<string, { trips: number; earnings: number }>();
+    const dailyTotals = new Map<string, { trips: number; earnings: number }>();
     let monthlyTotal = 0;
     let monthlyTripCount = 0;
 
@@ -88,23 +121,35 @@ export async function POST(req: NextRequest) {
       monthlyTotal += earnings;
       monthlyTripCount++;
 
-      // Calculate week number
       const tripDate = new Date(trip.tripDate);
-      const jan1 = new Date(Date.UTC(tripDate.getUTCFullYear(), 0, 1));
-      const dayOfWeek = jan1.getUTCDay();
-      const daysToMonday = dayOfWeek === 0 ? 1 : (8 - dayOfWeek);
-      const week1Start = new Date(Date.UTC(tripDate.getUTCFullYear(), 0, 1 + daysToMonday));
-      const diffMs = tripDate.getTime() - week1Start.getTime();
-      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-      const weekNum = Math.floor(diffDays / 7) + 1;
-      const weekKey = `Week ${weekNum}`;
 
-      if (!weeklyTotals.has(weekKey)) {
-        weeklyTotals.set(weekKey, { trips: 0, earnings: 0 });
+      if (invoiceType === 'monthly') {
+        // Calculate week number for monthly invoices
+        const jan1 = new Date(Date.UTC(tripDate.getUTCFullYear(), 0, 1));
+        const dayOfWeek = jan1.getUTCDay();
+        const daysToMonday = dayOfWeek === 0 ? 1 : (8 - dayOfWeek);
+        const week1Start = new Date(Date.UTC(tripDate.getUTCFullYear(), 0, 1 + daysToMonday));
+        const diffMs = tripDate.getTime() - week1Start.getTime();
+        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+        const weekNum = Math.floor(diffDays / 7) + 1;
+        const weekKey = `Week ${weekNum}`;
+
+        if (!weeklyTotals.has(weekKey)) {
+          weeklyTotals.set(weekKey, { trips: 0, earnings: 0 });
+        }
+        const weekData = weeklyTotals.get(weekKey)!;
+        weekData.trips++;
+        weekData.earnings += earnings;
+      } else {
+        // For weekly invoices, group by day
+        const dayKey = tripDate.toISOString().slice(0, 10);
+        if (!dailyTotals.has(dayKey)) {
+          dailyTotals.set(dayKey, { trips: 0, earnings: 0 });
+        }
+        const dayData = dailyTotals.get(dayKey)!;
+        dayData.trips++;
+        dayData.earnings += earnings;
       }
-      const weekData = weeklyTotals.get(weekKey)!;
-      weekData.trips++;
-      weekData.earnings += earnings;
     }
 
     // Generate PDF Invoice
@@ -146,7 +191,7 @@ export async function POST(req: NextRequest) {
     // Invoice header
     content.push(
       { text: 'GUIDE INVOICE', style: 'header', alignment: 'center' },
-      { text: `${month}`, style: 'subheader', alignment: 'center', margin: [0, 0, 0, 20] }
+      { text: `${periodLabel}`, style: 'subheader', alignment: 'center', margin: [0, 0, 0, 20] }
     );
 
     // Guide details
@@ -166,7 +211,7 @@ export async function POST(req: NextRequest) {
             width: '*',
             stack: [
               { text: `Invoice Date: ${new Date().toISOString().slice(0, 10)}`, margin: [0, 0, 0, 4] },
-              { text: `Period: ${month}`, margin: [0, 0, 0, 4] },
+              { text: `Period: ${periodLabel}`, margin: [0, 0, 0, 4] },
               { text: `Total Trips: ${monthlyTripCount}`, margin: [0, 0, 0, 4] }
             ]
           }
@@ -175,38 +220,72 @@ export async function POST(req: NextRequest) {
       }
     );
 
-    // Weekly summary
-    content.push(
-      { text: 'Weekly Summary', style: 'sectionHeader', margin: [0, 0, 0, 8] },
-      {
-        table: {
-          headerRows: 1,
-          widths: ['*', 'auto', 'auto'],
-          body: [
-            [
-              { text: 'Week', bold: true, fillColor: '#f1f5f9' },
-              { text: 'Trips', bold: true, fillColor: '#f1f5f9' },
-              { text: 'Earnings', bold: true, fillColor: '#f1f5f9' }
-            ],
-            ...Array.from(weeklyTotals.entries()).map(([week, data]) => [
-              week,
-              data.trips.toString(),
-              `R ${data.earnings.toFixed(2)}`
-            ])
-          ]
-        },
-        layout: {
-          hLineWidth: () => 0.5,
-          vLineWidth: () => 0,
-          hLineColor: () => '#e2e8f0',
-          paddingLeft: () => 8,
-          paddingRight: () => 8,
-          paddingTop: () => 6,
-          paddingBottom: () => 6
-        },
-        margin: [0, 0, 0, 20]
-      }
-    );
+    // Summary (weekly for monthly invoices, daily for weekly invoices)
+    if (invoiceType === 'monthly' && weeklyTotals.size > 0) {
+      content.push(
+        { text: 'Weekly Summary', style: 'sectionHeader', margin: [0, 0, 0, 8] },
+        {
+          table: {
+            headerRows: 1,
+            widths: ['*', 'auto', 'auto'],
+            body: [
+              [
+                { text: 'Week', bold: true, fillColor: '#f1f5f9' },
+                { text: 'Trips', bold: true, fillColor: '#f1f5f9' },
+                { text: 'Earnings', bold: true, fillColor: '#f1f5f9' }
+              ],
+              ...Array.from(weeklyTotals.entries()).map(([week, data]) => [
+                week,
+                data.trips.toString(),
+                `R ${data.earnings.toFixed(2)}`
+              ])
+            ]
+          },
+          layout: {
+            hLineWidth: () => 0.5,
+            vLineWidth: () => 0,
+            hLineColor: () => '#e2e8f0',
+            paddingLeft: () => 8,
+            paddingRight: () => 8,
+            paddingTop: () => 6,
+            paddingBottom: () => 6
+          },
+          margin: [0, 0, 0, 20]
+        }
+      );
+    } else if (invoiceType === 'weekly' && dailyTotals.size > 0) {
+      content.push(
+        { text: 'Daily Summary', style: 'sectionHeader', margin: [0, 0, 0, 8] },
+        {
+          table: {
+            headerRows: 1,
+            widths: ['*', 'auto', 'auto'],
+            body: [
+              [
+                { text: 'Date', bold: true, fillColor: '#f1f5f9' },
+                { text: 'Trips', bold: true, fillColor: '#f1f5f9' },
+                { text: 'Earnings', bold: true, fillColor: '#f1f5f9' }
+              ],
+              ...Array.from(dailyTotals.entries()).sort().map(([date, data]) => [
+                new Date(date).toLocaleDateString('en-ZA'),
+                data.trips.toString(),
+                `R ${data.earnings.toFixed(2)}`
+              ])
+            ]
+          },
+          layout: {
+            hLineWidth: () => 0.5,
+            vLineWidth: () => 0,
+            hLineColor: () => '#e2e8f0',
+            paddingLeft: () => 8,
+            paddingRight: () => 8,
+            paddingTop: () => 6,
+            paddingBottom: () => 6
+          },
+          margin: [0, 0, 0, 20]
+        }
+      );
+    }
 
     // Trip details
     content.push(
@@ -307,20 +386,23 @@ export async function POST(req: NextRequest) {
     const adminEmails = (process.env.ADMIN_EMAILS || 'gidslang89@gmail.com,info@kayak.co.za')
       .split(',').map(e => e.trim()).filter(Boolean);
 
+    const periodForFilename = invoiceType === 'weekly' ? week.replace('/', '-') : month;
+
     await sendEmail({
       to: adminEmails,
-      subject: `Invoice from ${userWithGuide.guide.name} - ${month}`,
+      subject: `${invoiceType === 'weekly' ? 'Weekly' : 'Monthly'} Invoice from ${userWithGuide.guide.name} - ${periodLabel}`,
       html: `
         <h2>Guide Invoice Submission</h2>
         <p><strong>Guide:</strong> ${userWithGuide.guide.name} (${userWithGuide.guide.rank})</p>
-        <p><strong>Period:</strong> ${month}</p>
+        <p><strong>Type:</strong> ${invoiceType === 'weekly' ? 'Weekly' : 'Monthly'}</p>
+        <p><strong>Period:</strong> ${periodLabel}</p>
         <p><strong>Total Trips:</strong> ${monthlyTripCount}</p>
         <p><strong>Total Earnings:</strong> R ${monthlyTotal.toFixed(2)}</p>
         <p>Please find the detailed invoice attached.</p>
       `,
       attachments: [
         {
-          filename: `invoice-${userWithGuide.guide.name.replace(/\s+/g, '-')}-${month}.pdf`,
+          filename: `invoice-${userWithGuide.guide.name.replace(/\s+/g, '-')}-${periodForFilename}.pdf`,
           content: pdf,
           contentType: 'application/pdf'
         }
@@ -331,14 +413,17 @@ export async function POST(req: NextRequest) {
       guideId: userWithGuide.guideId,
       guideName: userWithGuide.guide.name,
       userId: user.id,
-      month,
+      invoiceType,
+      period: periodLabel,
+      month: invoiceType === 'monthly' ? month : undefined,
+      week: invoiceType === 'weekly' ? week : undefined,
       tripCount: monthlyTripCount,
       totalEarnings: monthlyTotal
     });
 
     return Response.json({
       success: true,
-      message: `Invoice for ${month} submitted successfully`,
+      message: `Invoice for ${periodLabel} submitted successfully`,
       tripCount: monthlyTripCount,
       totalEarnings: monthlyTotal
     });
