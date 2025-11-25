@@ -52,7 +52,7 @@ export function Navigation() {
           alignItems: "center"
         }}>
         {/* Logo */}
-        <Link href="/" style={{ display: "flex", alignItems: "center", gap: "0.5rem", textDecoration: "none", color: "#333" }}>
+        <Link href="/trips" style={{ display: "flex", alignItems: "center", gap: "0.5rem", textDecoration: "none", color: "#333" }}>
           <img src="/CKAlogo.png" alt="CKA Logo" style={{ height: "32px", width: "auto" }} />
           <span style={{ fontWeight: "bold", fontSize: "1rem" }}>Cashups</span>
         </Link>
@@ -61,8 +61,15 @@ export function Navigation() {
         <div style={{ display: "none", marginRight: "-5rem" }} className="desktop-nav">
           <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
             <Link
+              href="/trips/new"
+              className={isActive("/trips/new") ? "btn" : "btn ghost"}
+              style={{ textDecoration: "none" }}
+            >
+              New cash up
+            </Link>
+            <Link
               href="/trips"
-              className={isActive("/trips") ? "btn" : "btn ghost"}
+              className={isActive("/trips") && !isActive("/trips/new") ? "btn" : "btn ghost"}
               style={{ textDecoration: "none" }}
             >
               My Trips
@@ -118,8 +125,16 @@ export function Navigation() {
           }}
         >
           <Link
+            href="/trips/new"
+            className={isActive("/trips/new") ? "btn" : "btn ghost"}
+            style={{ textDecoration: "none", width: "auto", textAlign: "left" }}
+            onClick={() => setMenuOpen(false)}
+          >
+            New cash up
+          </Link>
+          <Link
             href="/trips"
-            className={isActive("/trips") ? "btn" : "btn ghost"}
+            className={isActive("/trips") && !isActive("/trips/new") ? "btn" : "btn ghost"}
             style={{ textDecoration: "none", width: "auto", textAlign: "left" }}
             onClick={() => setMenuOpen(false)}
           >

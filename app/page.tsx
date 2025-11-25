@@ -10,13 +10,7 @@ export default async function Home() {
     redirect("/trips/new"); // admin: keep old landing (create cash ups)
   }
 
-  // If this user is linked to a Guide, route to the new Guide Home
-  const dbUser = await prisma.user.findUnique({
-    where: { id: user.id },
-    select: { guideId: true }
-  });
-
-  if (dbUser?.guideId) redirect("/guide");
+  // All users (guides and non-guides) go to new cash up form
   redirect("/trips/new");
 }
 
