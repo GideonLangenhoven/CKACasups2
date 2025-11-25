@@ -125,17 +125,13 @@ model TripGuide {
 }
 
 model PaymentBreakdown {
-  id                 String  @id @default(cuid())
-  tripId             String  @unique
-  trip               Trip    @relation(fields: [tripId], references: [id])
-  cashReceived       Decimal @db.Decimal(10,2)
-  creditCards        Decimal @db.Decimal(10,2)
-  onlineEFTs         Decimal @db.Decimal(10,2)
-  vouchers           Decimal @db.Decimal(10,2)
-  members            Decimal @db.Decimal(10,2)
-  agentsToInvoice    Decimal @db.Decimal(10,2)
-  waterPhoneSunblock Decimal @default(0) @db.Decimal(10,2)
-  discountsTotal     Decimal @db.Decimal(10,2)
+  id              String  @id @default(cuid())
+  tripId          String  @unique
+  trip            Trip    @relation(fields: [tripId], references: [id])
+  cashReceived    Decimal @db.Decimal(10,2)
+  phonePouches    Decimal @default(0) @db.Decimal(10,2)
+  waterSales      Decimal @default(0) @db.Decimal(10,2)
+  sunglassesSales Decimal @default(0) @db.Decimal(10,2)
 }
 
 model DiscountLine {
