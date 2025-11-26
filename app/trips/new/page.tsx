@@ -98,7 +98,7 @@ export default function NewTripPage() {
     window.location.reload();
   }
 
-  async function submit(status: "DRAFT"|"SUBMITTED") {
+  async function submit(status: "DRAFT"|"SUBMITTED"|"APPROVED") {
     // Validate cash received is a number
     if (cashReceived && isNaN(parseFloat(cashReceived))) {
       alert('Error: Cash received must be a number. Please enter numbers only (e.g., 100 or 100.50)');
