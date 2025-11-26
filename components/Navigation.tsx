@@ -26,12 +26,8 @@ export function Navigation() {
       try {
         const res = await fetch('/api/auth/session');
         const data = await res.json();
-        if (data.user?.guideId) {
-          const guideRes = await fetch(`/api/guides`);
-          const guideData = await guideRes.json();
-          const userGuide = guideData.guides?.find((g: any) => g.id === data.user.guideId);
-          setCanBeLeader(userGuide?.rank === 'SENIOR' || userGuide?.rank === 'INTERMEDIATE');
-        }
+        const guideRank = data.user?.guideRank;
+        setCanBeLeader(guideRank === 'SENIOR' || guideRank === 'INTERMEDIATE');
       } catch (error) {
         setCanBeLeader(false);
       }
