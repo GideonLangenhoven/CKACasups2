@@ -22,9 +22,6 @@ export default function NewTripPage() {
   const [selectedGuides, setSelectedGuides] = useState<string[]>([]);
 
   const [cashReceived, setCashReceived] = useState<string>("");
-  const [phonePouches, setPhonePouches] = useState<string>("");
-  const [waterSales, setWaterSales] = useState<string>("");
-  const [sunglassesSales, setSunglassesSales] = useState<string>("");
   const [paymentsMadeYN, setPaymentsMadeYN] = useState<boolean>(false);
   const [picsUploadedYN, setPicsUploadedYN] = useState<boolean>(false);
   const [tripEmailSentYN, setTripEmailSentYN] = useState<boolean>(false);
@@ -72,9 +69,6 @@ export default function NewTripPage() {
         setTotalPax(d.totalPax || 0);
         setSelectedGuides(d.selectedGuides || []);
         setCashReceived(d.cashReceived || "");
-        setPhonePouches(d.phonePouches || "");
-        setWaterSales(d.waterSales || "");
-        setSunglassesSales(d.sunglassesSales || "");
         setPaymentsMadeYN(!!d.paymentsMadeYN);
         setPicsUploadedYN(!!d.picsUploadedYN);
         setTripEmailSentYN(!!d.tripEmailSentYN);
@@ -87,9 +81,9 @@ export default function NewTripPage() {
   }, []);
 
   useEffect(() => {
-    const payload = { tripDate, tripTime, leadName, paxGuideNote, totalPax, selectedGuides, cashReceived, phonePouches, waterSales, sunglassesSales, paymentsMadeYN, picsUploadedYN, tripEmailSentYN, tripReport, suggestions };
+    const payload = { tripDate, tripTime, leadName, paxGuideNote, totalPax, selectedGuides, cashReceived, paymentsMadeYN, picsUploadedYN, tripEmailSentYN, tripReport, suggestions };
     localStorage.setItem('cashup-draft', JSON.stringify(payload));
-  }, [tripDate, tripTime, leadName, paxGuideNote, totalPax, selectedGuides, cashReceived, phonePouches, waterSales, sunglassesSales, paymentsMadeYN, picsUploadedYN, tripEmailSentYN, tripReport, suggestions]);
+  }, [tripDate, tripTime, leadName, paxGuideNote, totalPax, selectedGuides, cashReceived, paymentsMadeYN, picsUploadedYN, tripEmailSentYN, tripReport, suggestions]);
 
   function toggleGuide(id: string) {
     setSelectedGuides((prev) => {
@@ -105,19 +99,10 @@ export default function NewTripPage() {
   }
 
   async function submit(status: "DRAFT"|"SUBMITTED") {
-    // Validate payment fields are numbers
-    const paymentFields = [
-      { name: 'Cash received', value: cashReceived },
-      { name: 'Phone pouches', value: phonePouches },
-      { name: 'Water sales', value: waterSales },
-      { name: 'Sunglasses sales', value: sunglassesSales }
-    ];
-
-    for (const field of paymentFields) {
-      if (field.value && isNaN(parseFloat(field.value))) {
-        alert(`Error: ${field.name} must be a number. Please enter numbers only (e.g., 100 or 100.50)`);
-        return;
-      }
+    // Validate cash received is a number
+    if (cashReceived && isNaN(parseFloat(cashReceived))) {
+      alert('Error: Cash received must be a number. Please enter numbers only (e.g., 100 or 100.50)');
+      return;
     }
 
     const payload = {
@@ -135,9 +120,9 @@ export default function NewTripPage() {
       guides: selectedGuides.map(guideId => ({ guideId, pax: 0 })),
       payments: {
         cashReceived: parseFloat(cashReceived || "0"),
-        phonePouches: parseFloat(phonePouches || "0"),
-        waterSales: parseFloat(waterSales || "0"),
-        sunglassesSales: parseFloat(sunglassesSales || "0")
+        phonePouches: 0,
+        waterSales: 0,
+        sunglassesSales: 0
       },
       discounts: []
     };
@@ -263,28 +248,9 @@ export default function NewTripPage() {
       {step === 3 && (
         <div className="stack">
           <div className="section-title">Payments</div>
-          <div className="payment-row" style={{ display: 'flex', gap: '20px', marginBottom: '20px' }}>
-            <div className="payment-field" style={{ width: '35%' }}>
-              <label className="label" style={{ marginBottom: 6, display: 'block' }}>Cash received (R)</label>
-              <input className="input" inputMode="decimal" value={cashReceived} onChange={e=>setCashReceived(e.target.value)} placeholder="Numbers only" />
-            </div>
-          </div>
-          <div className="section-title">Additional Sales</div>
-          <div className="payment-row" style={{ display: 'flex', gap: '20px', marginBottom: '20px' }}>
-            <div className="payment-field" style={{ width: '35%' }}>
-              <label className="label" style={{ marginBottom: 6, display: 'block' }}>Phone pouches (R)</label>
-              <input className="input" inputMode="decimal" value={phonePouches} onChange={e=>setPhonePouches(e.target.value)} placeholder="Numbers only" />
-            </div>
-            <div className="payment-field" style={{ width: '35%' }}>
-              <label className="label" style={{ marginBottom: 6, display: 'block' }}>Water sales (R)</label>
-              <input className="input" inputMode="decimal" value={waterSales} onChange={e=>setWaterSales(e.target.value)} placeholder="Numbers only" />
-            </div>
-          </div>
-          <div className="payment-row" style={{ display: 'flex', gap: '20px', marginBottom: '20px' }}>
-            <div className="payment-field" style={{ width: '35%' }}>
-              <label className="label" style={{ marginBottom: 6, display: 'block' }}>Sunglasses sales (R)</label>
-              <input className="input" inputMode="decimal" value={sunglassesSales} onChange={e=>setSunglassesSales(e.target.value)} placeholder="Numbers only" />
-            </div>
+          <div>
+            <label className="label" style={{ marginBottom: 6, display: 'block' }}>Cash received (R)</label>
+            <input className="input" inputMode="decimal" value={cashReceived} onChange={e=>setCashReceived(e.target.value)} placeholder="Numbers only" style={{ maxWidth: '300px' }} />
           </div>
           <div className="section-title">Additional Checks</div>
           <label className="row"><input type="checkbox" checked={paymentsMadeYN} onChange={e=>setPaymentsMadeYN(e.target.checked)} /> All payments in Activitar</label>
