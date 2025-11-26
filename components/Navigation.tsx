@@ -9,10 +9,34 @@ export function Navigation() {
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [canBeLeader, setCanBeLeader] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Check if user can be a trip leader (SENIOR or INTERMEDIATE guide)
+  useEffect(() => {
+    if (!user?.id || user.role === 'ADMIN') {
+      setCanBeLeader(false);
+      return;
+    }
+
+    (async () => {
+      try {
+        const res = await fetch('/api/auth/session');
+        const data = await res.json();
+        if (data.user?.guideId) {
+          const guideRes = await fetch(`/api/guides`);
+          const guideData = await guideRes.json();
+          const userGuide = guideData.guides?.find((g: any) => g.id === data.user.guideId);
+          setCanBeLeader(userGuide?.rank === 'SENIOR' || userGuide?.rank === 'INTERMEDIATE');
+        }
+      } catch (error) {
+        setCanBeLeader(false);
+      }
+    })();
+  }, [user]);
 
   if (!mounted || loading) {
     return (
@@ -68,13 +92,15 @@ export function Navigation() {
                 >
                   New cash up
                 </Link>
-                <Link
-                  href="/trips/logged"
-                  className={isActive("/trips/logged") ? "btn" : "btn ghost"}
-                  style={{ textDecoration: "none" }}
-                >
-                  Trips Logged
-                </Link>
+                {canBeLeader && (
+                  <Link
+                    href="/trips/logged"
+                    className={isActive("/trips/logged") ? "btn" : "btn ghost"}
+                    style={{ textDecoration: "none" }}
+                  >
+                    Trips Logged
+                  </Link>
+                )}
                 <Link
                   href="/trips"
                   className={isActive("/trips") && !isActive("/trips/new") && !isActive("/trips/logged") ? "btn" : "btn ghost"}
@@ -144,14 +170,16 @@ export function Navigation() {
               >
                 New cash up
               </Link>
-              <Link
-                href="/trips/logged"
-                className={isActive("/trips/logged") ? "btn" : "btn ghost"}
-                style={{ textDecoration: "none", width: "auto", textAlign: "left" }}
-                onClick={() => setMenuOpen(false)}
-              >
-                Trips Logged
-              </Link>
+              {canBeLeader && (
+                <Link
+                  href="/trips/logged"
+                  className={isActive("/trips/logged") ? "btn" : "btn ghost"}
+                  style={{ textDecoration: "none", width: "auto", textAlign: "left" }}
+                  onClick={() => setMenuOpen(false)}
+                >
+                  Trips Logged
+                </Link>
+              )}
               <Link
                 href="/trips"
                 className={isActive("/trips") && !isActive("/trips/new") && !isActive("/trips/logged") ? "btn" : "btn ghost"}

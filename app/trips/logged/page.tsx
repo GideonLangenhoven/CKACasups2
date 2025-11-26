@@ -6,11 +6,27 @@ export default async function TripsLoggedPage() {
   const user = await getServerSession();
   if (!user?.id) return <div>Please <Link href="/auth/signin">sign in</Link>.</div>;
 
-  // Get user's guide ID
+  // Get user's guide ID and guide details
   const userWithGuide = await prisma.user.findUnique({
     where: { id: user.id },
-    select: { guideId: true, role: true }
+    select: { guideId: true, role: true, guide: true }
   });
+
+  // Check if user can be a trip leader (SENIOR or INTERMEDIATE)
+  const canBeLeader = userWithGuide?.guide &&
+    (userWithGuide.guide.rank === 'SENIOR' || userWithGuide.guide.rank === 'INTERMEDIATE');
+
+  if (!canBeLeader && userWithGuide?.role !== 'ADMIN') {
+    return (
+      <div className="stack">
+        <div className="card">
+          <h2>Trips Logged</h2>
+          <p>This page is only accessible to trip leaders (Senior and Intermediate guides).</p>
+          <p>If you need to view your trips, please use the <Link href="/trips">My Trips</Link> page.</p>
+        </div>
+      </div>
+    );
+  }
 
   // Get trips where this user is the creator or trip leader
   const whereConditions: any[] = [
