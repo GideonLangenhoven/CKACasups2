@@ -94,14 +94,20 @@ export function EarningsTripList({ trips: initialTrips, guideId }: EarningsTripL
                       Pending Approval
                     </div>
                   )}
-                  <EditTripFeeButton
-                    tripId={trip.id}
-                    tripGuideId={trip.guides[0].id}
-                    currentFee={myEarnings}
-                    tripDate={trip.tripDate}
-                    leadName={trip.leadName}
-                    onFeeUpdated={handleFeeUpdated}
-                  />
+                  {trip.guides[0] ? (
+                    <EditTripFeeButton
+                      tripId={trip.id}
+                      tripGuideId={trip.guides[0].id}
+                      currentFee={myEarnings}
+                      tripDate={trip.tripDate}
+                      leadName={trip.leadName}
+                      onFeeUpdated={handleFeeUpdated}
+                    />
+                  ) : (
+                    <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: 4, textAlign: 'right' }}>
+                      (Trip Leader / Creator)
+                    </div>
+                  )}
                 </div>
               </div>
             );

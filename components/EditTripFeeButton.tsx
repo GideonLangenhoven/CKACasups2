@@ -1,5 +1,6 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 
 interface EditTripFeeButtonProps {
   tripId: string;
@@ -75,7 +76,8 @@ export function EditTripFeeButton({
     );
   }
 
-  return (
+
+  return createPortal(
     <div
       style={{
         position: 'fixed',
@@ -170,6 +172,8 @@ export function EditTripFeeButton({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
+
 }

@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { getServerSession } from "@/lib/session";
 import { NextRequest } from "next/server";
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string }}) {
+export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const user = await getServerSession();
     if (!user?.id) return new Response('Unauthorized', { status: 401 });
@@ -27,9 +27,10 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     });
 
     const isOwnGuide = userWithGuide?.guideId === tripGuide.guideId;
+    const isTripLeader = tripGuide.trip.tripLeaderId === userWithGuide?.guideId;
     const isAdmin = user.role === 'ADMIN';
 
-    if (!isOwnGuide && !isAdmin) {
+    if (!isOwnGuide && !isAdmin && !isTripLeader) {
       return new Response('Forbidden: You can only edit your own trip fees', { status: 403 });
     }
 

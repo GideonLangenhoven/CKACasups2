@@ -121,6 +121,21 @@ export async function createUserSession(email: string, name?: string): Promise<S
   const finalName = matchingGuide?.name || normalizedName || normalizedEmail.split('@')[0];
 
   // Create or update user account
+  // For update: always set guideId if we found a matching guide
+  // This ensures existing users get linked when their guide is created
+  const updateData: any = {
+    active: true
+  };
+
+  if (isAdmin) {
+    updateData.role = 'ADMIN';
+  }
+
+  if (matchingGuide) {
+    updateData.name = matchingGuide.name;
+    updateData.guideId = matchingGuide.id;
+  }
+
   const updatedUser = await prisma.user.upsert({
     where: { email: normalizedEmail },
     create: {
@@ -129,12 +144,7 @@ export async function createUserSession(email: string, name?: string): Promise<S
       role: isAdmin ? 'ADMIN' : 'USER',
       guideId: matchingGuide?.id
     },
-    update: {
-      role: isAdmin ? 'ADMIN' : undefined,
-      active: true,
-      name: matchingGuide?.name || undefined,  // Update name to match guide
-      guideId: matchingGuide?.id || undefined
-    }
+    update: updateData
   });
 
   // Log account creation for new users
