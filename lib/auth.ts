@@ -95,12 +95,34 @@ export async function createUserSession(email: string, name?: string): Promise<S
   // If not found by email and name is provided, try by name
   // IMPORTANT: Only link to guide if email is not already set on another guide
   if (!matchingGuide && normalizedName) {
-    const guideByName = await prisma.guide.findFirst({
+    // Try multiple matching strategies in order of reliability:
+
+    // 1. Try exact name match first
+    let guideByName = await prisma.guide.findFirst({
       where: {
         name: { equals: normalizedName, mode: 'insensitive' },
         active: true
       }
     });
+
+    // 2. If no exact match, try finding guides that contain the entered name
+    //    or whose name is contained in the entered name
+    if (!guideByName) {
+      // Get all active guides
+      const allGuides = await prisma.guide.findMany({
+        where: { active: true }
+      });
+
+      // Try to find a match by checking if the entered name is part of the guide name
+      // or vice versa (e.g., "Noah" matches "Noah Badenhorst")
+      guideByName = allGuides.find(g => {
+        const guideName = g.name.toLowerCase();
+        const enteredName = normalizedName.toLowerCase();
+
+        // Check if either name contains the other
+        return guideName.includes(enteredName) || enteredName.includes(guideName);
+      }) || null;
+    }
 
     // Only use this guide if they don't have an email set, or if their email matches
     if (guideByName && (!guideByName.email || guideByName.email === normalizedEmail)) {
