@@ -59,21 +59,25 @@ export function Navigation() {
         {/* Desktop Navigation */}
         <div style={{ display: "none", marginRight: "-5rem" }} className="desktop-nav">
           <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
-            <Link
-              href="/trips/new"
-              className={isActive("/trips/new") ? "btn" : "btn ghost"}
-              style={{ textDecoration: "none" }}
-            >
-              New cash up
-            </Link>
-            <Link
-              href="/trips"
-              className={isActive("/trips") && !isActive("/trips/new") ? "btn" : "btn ghost"}
-              style={{ textDecoration: "none" }}
-            >
-              My Trips
-            </Link>
-            {(user.email === "gidslang89@gmail.com" || user.email === "info@kayak.co.za") && (
+            {user.role !== "ADMIN" && (
+              <>
+                <Link
+                  href="/trips/new"
+                  className={isActive("/trips/new") ? "btn" : "btn ghost"}
+                  style={{ textDecoration: "none" }}
+                >
+                  New cash up
+                </Link>
+                <Link
+                  href="/trips"
+                  className={isActive("/trips") && !isActive("/trips/new") ? "btn" : "btn ghost"}
+                  style={{ textDecoration: "none" }}
+                >
+                  My Trips
+                </Link>
+              </>
+            )}
+            {user.role === "ADMIN" && (
               <Link
                 href="/admin"
                 className={isActive("/admin") ? "btn" : "btn ghost"}
@@ -123,23 +127,27 @@ export function Navigation() {
             alignItems: "flex-start"
           }}
         >
-          <Link
-            href="/trips/new"
-            className={isActive("/trips/new") ? "btn" : "btn ghost"}
-            style={{ textDecoration: "none", width: "auto", textAlign: "left" }}
-            onClick={() => setMenuOpen(false)}
-          >
-            New cash up
-          </Link>
-          <Link
-            href="/trips"
-            className={isActive("/trips") && !isActive("/trips/new") ? "btn" : "btn ghost"}
-            style={{ textDecoration: "none", width: "auto", textAlign: "left" }}
-            onClick={() => setMenuOpen(false)}
-          >
-            My Trips
-          </Link>
-          {(user.email === "gidslang89@gmail.com" || user.email === "info@kayak.co.za") && (
+          {user.role !== "ADMIN" && (
+            <>
+              <Link
+                href="/trips/new"
+                className={isActive("/trips/new") ? "btn" : "btn ghost"}
+                style={{ textDecoration: "none", width: "auto", textAlign: "left" }}
+                onClick={() => setMenuOpen(false)}
+              >
+                New cash up
+              </Link>
+              <Link
+                href="/trips"
+                className={isActive("/trips") && !isActive("/trips/new") ? "btn" : "btn ghost"}
+                style={{ textDecoration: "none", width: "auto", textAlign: "left" }}
+                onClick={() => setMenuOpen(false)}
+              >
+                My Trips
+              </Link>
+            </>
+          )}
+          {user.role === "ADMIN" && (
             <Link
               href="/admin"
               className={isActive("/admin") ? "btn" : "btn ghost"}
