@@ -322,6 +322,51 @@ export async function GET(req: NextRequest) {
     }
   });
 
+  // Trip Reports Section
+  const tripsWithReports = trips.filter(t => t.tripReport && t.tripReport.trim().length > 0);
+
+  if (tripsWithReports.length > 0) {
+    content.push(
+      { text: 'Trip Reports', style: 'sectionHeader', margin: [0, 20, 0, 10], pageBreak: 'before' }
+    );
+
+    for (const trip of tripsWithReports) {
+      const tripDate = new Date(trip.tripDate).toISOString().slice(0, 10);
+      const tripLeaderName = trip.tripLeader?.name || 'N/A';
+
+      content.push({
+        stack: [
+          {
+            columns: [
+              { text: `${tripDate} - ${trip.leadName}`, bold: true, fontSize: 11, color: '#334155', width: '*' },
+              { text: `Trip Leader: ${tripLeaderName}`, fontSize: 9, color: '#64748b', width: 'auto' }
+            ],
+            margin: [0, 0, 0, 4]
+          },
+          {
+            text: trip.tripReport,
+            fontSize: 9,
+            color: '#1e293b',
+            margin: [0, 0, 0, 0],
+            lineHeight: 1.3
+          }
+        ],
+        margin: [0, 0, 0, 12]
+      });
+
+      // Add suggestions if present
+      if (trip.suggestions && trip.suggestions.trim().length > 0) {
+        content.push({
+          stack: [
+            { text: 'Suggestions:', bold: true, fontSize: 9, color: '#64748b', margin: [0, 0, 0, 2] },
+            { text: trip.suggestions, fontSize: 9, color: '#1e293b', italics: true, lineHeight: 1.3 }
+          ],
+          margin: [0, 0, 0, 12]
+        });
+      }
+    }
+  }
+
   const docDefinition = {
     content,
     pageSize: 'A4',

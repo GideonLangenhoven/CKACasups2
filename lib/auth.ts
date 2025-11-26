@@ -34,19 +34,26 @@ export async function createUserSession(email: string, name?: string): Promise<S
         user.name = user.guide.name;
       }
 
-      // For guides, require exact name match to avoid conflicts (e.g., "Josh" vs "Josh T")
-      if (normalizedName) {
-        const guideName = user.guide.name.toLowerCase();
-        const enteredName = normalizedName.toLowerCase();
+      // For guides, require name - it must be provided and match exactly
+      if (!normalizedName) {
+        throw new Error(`Name is required for this email address. Please use: ${user.guide.name}`);
+      }
 
-        // Require exact match for guides
-        if (guideName !== enteredName) {
-          throw new Error(`Incorrect name for this email address. Please use exactly: ${user.guide.name}`);
-        }
+      const guideName = user.guide.name.toLowerCase();
+      const enteredName = normalizedName.toLowerCase();
+
+      // Require exact match for guides
+      if (guideName !== enteredName) {
+        throw new Error(`Incorrect name for this email address. Please use exactly: ${user.guide.name}`);
       }
     } else {
-      // For non-guide users, also require exact name match for consistency
-      if (user.name && normalizedName) {
+      // For non-guide users, also require exact name match if name is set
+      if (user.name) {
+        // Name is required if user has a name set
+        if (!normalizedName) {
+          throw new Error(`Name is required for this email address. Please use: ${user.name}`);
+        }
+
         const storedName = user.name.toLowerCase();
         const enteredName = normalizedName.toLowerCase();
 
