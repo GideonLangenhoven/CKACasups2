@@ -28,17 +28,12 @@ export default function EditTripPage() {
   const [selectedGuides, setSelectedGuides] = useState<string[]>([]);
 
   const [cashReceived, setCashReceived] = useState<string>("");
-  const [phonePouches, setPhonePouches] = useState<string>("");
-  const [waterSales, setWaterSales] = useState<string>("");
-  const [sunglassesSales, setSunglassesSales] = useState<string>("");
-  const [discounts, setDiscounts] = useState<{amount: string; reason: string}[]>([]);
   const [paymentsMadeYN, setPaymentsMadeYN] = useState<boolean>(false);
   const [picsUploadedYN, setPicsUploadedYN] = useState<boolean>(false);
   const [tripEmailSentYN, setTripEmailSentYN] = useState<boolean>(false);
   const [tripReport, setTripReport] = useState<string>("");
   const [suggestions, setSuggestions] = useState<string>("");
-
-  const discountTotal = useMemo(() => discounts.reduce((s, d) => s + (parseFloat(d.amount || "0") || 0), 0), [discounts]);
+  const [currentStatus, setCurrentStatus] = useState<string>("APPROVED");
   const rankCounts = useMemo(() => {
     const getRank = (id: string) => guides.find(g => g.id === id)?.rank;
     return selectedGuides.reduce((acc, guideId) => {
@@ -68,11 +63,21 @@ export default function EditTripPage() {
         const res = await fetch(`/api/trips/${tripId}`);
         if (!res.ok) {
           alert('Failed to load trip');
-          router.push('/trips');
+          router.push('/trips/logged');
           return;
         }
         const data = await res.json();
         const trip = data.trip;
+
+        // Check if current user is the trip leader
+        const currentUserRes = await fetch('/api/auth/session');
+        const currentUserData = await currentUserRes.json();
+
+        if (!currentUserData.user?.guideId || trip.tripLeaderId !== currentUserData.user.guideId) {
+          alert('You can only edit trips where you are the trip leader');
+          router.push('/trips/logged');
+          return;
+        }
 
         // Populate form fields with existing trip data
         setTripDate(trip.tripDate.slice(0, 10));
@@ -81,13 +86,11 @@ export default function EditTripPage() {
         setTotalPax(trip.totalPax);
         setTripLeaderId(trip.tripLeaderId || "");
         setSelectedGuides(trip.guides.map((g: any) => g.guideId));
+        setCurrentStatus(trip.status);
 
         // Populate payment fields
         if (trip.payments) {
           setCashReceived(trip.payments.cashReceived.toString());
-          setPhonePouches(trip.payments.phonePouches?.toString() || "0");
-          setWaterSales(trip.payments.waterSales?.toString() || "0");
-          setSunglassesSales(trip.payments.sunglassesSales?.toString() || "0");
         }
 
         // Populate checkboxes and text fields
@@ -96,12 +99,6 @@ export default function EditTripPage() {
         setTripEmailSentYN(trip.tripEmailSentYN);
         setTripReport(trip.tripReport || "");
         setSuggestions(trip.suggestions || "");
-
-        // Populate discounts
-        setDiscounts(trip.discounts.map((d: any) => ({
-          amount: d.amount.toString(),
-          reason: d.reason
-        })));
       } finally {
         setLoadingTrip(false);
         setMounted(true);
@@ -116,28 +113,11 @@ export default function EditTripPage() {
     });
   }
 
-  async function submit(status: "DRAFT"|"SUBMITTED") {
-    // Validate payment fields are numbers
-    const paymentFields = [
-      { name: 'Cash received', value: cashReceived },
-      { name: 'Phone pouches', value: phonePouches },
-      { name: 'Water sales', value: waterSales },
-      { name: 'Sunglasses sales', value: sunglassesSales }
-    ];
-
-    for (const field of paymentFields) {
-      if (field.value && isNaN(parseFloat(field.value))) {
-        alert(`Error: ${field.name} must be a number. Please enter numbers only (e.g., 100 or 100.50)`);
-        return;
-      }
-    }
-
-    // Validate discount amounts
-    for (let i = 0; i < discounts.length; i++) {
-      if (discounts[i].amount && isNaN(parseFloat(discounts[i].amount))) {
-        alert(`Error: Discount #${i + 1} amount must be a number. Please enter numbers only (e.g., 50 or 50.00)`);
-        return;
-      }
+  async function saveChanges() {
+    // Validate cash received is a number
+    if (cashReceived && isNaN(parseFloat(cashReceived))) {
+      alert('Error: Cash received must be a number. Please enter numbers only (e.g., 100 or 100.50)');
+      return;
     }
 
     const payload = {
@@ -151,19 +131,20 @@ export default function EditTripPage() {
       tripEmailSentYN,
       tripReport,
       suggestions,
-      status,
+      status: currentStatus,
       guides: selectedGuides.map(guideId => ({ guideId, pax: 0 })),
       payments: {
         cashReceived: parseFloat(cashReceived || "0"),
-        phonePouches: parseFloat(phonePouches || "0"),
-        waterSales: parseFloat(waterSales || "0"),
-        sunglassesSales: parseFloat(sunglassesSales || "0")
+        phonePouches: 0,
+        waterSales: 0,
+        sunglassesSales: 0
       },
-      discounts
+      discounts: []
     };
     const res = await fetch(`/api/trips/${tripId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
     if (res.ok) {
-      router.push(`/trips/${tripId}`);
+      alert('Trip updated successfully');
+      router.push('/trips/logged');
     } else {
       const contentType = res.headers.get('content-type');
       let errorMessage = 'Failed to update trip';
@@ -278,39 +259,11 @@ export default function EditTripPage() {
       {step === 3 && (
         <div className="stack">
           <div className="section-title">Payments</div>
-          <div className="payment-row" style={{ display: 'flex', gap: '20px', marginBottom: '20px' }}>
-            <div className="payment-field" style={{ width: '35%' }}>
-              <label className="label" style={{ marginBottom: 6, display: 'block' }}>Cash received (R)</label>
-              <input className="input" inputMode="decimal" value={cashReceived} onChange={e=>setCashReceived(e.target.value)} placeholder="Numbers only" />
-            </div>
-            <div className="payment-field" style={{ width: '35%' }}>
-              <label className="label" style={{ marginBottom: 6, display: 'block' }}>Phone pouches (R)</label>
-              <input className="input" inputMode="decimal" value={phonePouches} onChange={e=>setPhonePouches(e.target.value)} placeholder="Numbers only" />
-            </div>
+          <div>
+            <label className="label" style={{ marginBottom: 6, display: 'block' }}>Cash received (R)</label>
+            <input className="input" inputMode="decimal" value={cashReceived} onChange={e=>setCashReceived(e.target.value)} placeholder="Numbers only" style={{ maxWidth: '300px' }} />
           </div>
-          <div className="payment-row" style={{ display: 'flex', gap: '20px', marginBottom: '20px' }}>
-            <div className="payment-field" style={{ width: '35%' }}>
-              <label className="label" style={{ marginBottom: 6, display: 'block' }}>Water sales (R)</label>
-              <input className="input" inputMode="decimal" value={waterSales} onChange={e=>setWaterSales(e.target.value)} placeholder="Numbers only" />
-            </div>
-            <div className="payment-field" style={{ width: '35%' }}>
-              <label className="label" style={{ marginBottom: 6, display: 'block' }}>Sunglasses sales (R)</label>
-              <input className="input" inputMode="decimal" value={sunglassesSales} onChange={e=>setSunglassesSales(e.target.value)} placeholder="Numbers only" />
-            </div>
-          </div>
-          <div className="section-title">Discounts</div>
-          {discounts.map((d, idx) => (
-            <div className="row" key={idx}>
-              <input className="input" placeholder="Amount (R) - Numbers only" inputMode="decimal" value={d.amount} onChange={e=>{
-                const v = e.target.value; setDiscounts(prev=>prev.map((x,i)=>i===idx?{...x, amount: v}:x));
-              }} />
-              <input className="input" placeholder="Reason" value={d.reason} onChange={e=>{
-                const v = e.target.value; setDiscounts(prev=>prev.map((x,i)=>i===idx?{...x, reason: v}:x));
-              }} />
-              <button className="btn ghost" onClick={()=>setDiscounts(prev=>prev.filter((_,i)=>i!==idx))}>Remove</button>
-            </div>
-          ))}
-          <div className="row"><button className="btn secondary" onClick={()=>setDiscounts(prev=>[...prev,{amount:"0", reason:""}])}>Add discount</button><div>Discounts total: <strong>R {discountTotal.toFixed(2)}</strong></div></div>
+
           <div className="section-title">Additional Checks</div>
           <label className="row"><input type="checkbox" checked={paymentsMadeYN} onChange={e=>setPaymentsMadeYN(e.target.checked)} /> All payments in Activitar</label>
           <label className="row"><input type="checkbox" checked={picsUploadedYN} onChange={e=>setPicsUploadedYN(e.target.checked)} /> Facebook pictures uploaded</label>
@@ -337,10 +290,7 @@ export default function EditTripPage() {
           />
           <div className="row" style={{ justifyContent: 'space-between' }}>
             <button className="btn ghost" onClick={()=>setStep(2)}>Back</button>
-            <div className="row" style={{ gap: 8 }}>
-              <button className="btn ghost" onClick={()=>submit("DRAFT")}>Save Draft</button>
-              <button className="btn" onClick={()=>submit("SUBMITTED")}>Submit</button>
-            </div>
+            <button className="btn" onClick={saveChanges} disabled={!leadName || selectedGuides.length===0 || totalPax===0}>Save Changes</button>
           </div>
         </div>
       )}

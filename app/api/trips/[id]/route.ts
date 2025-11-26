@@ -21,8 +21,14 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
     if (!trip) return new Response('Not found', { status: 404 });
 
-    // Check if user can edit (admin or trip creator)
-    const canEdit = user.role === 'ADMIN' || user.id === trip.createdById;
+    // Check if user can edit (admin, trip creator, or trip leader)
+    const userWithGuide = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: { guideId: true }
+    });
+
+    const isTripLeader = userWithGuide?.guideId && trip.tripLeaderId === userWithGuide.guideId;
+    const canEdit = user.role === 'ADMIN' || user.id === trip.createdById || isTripLeader;
     if (!canEdit) return new Response('Forbidden', { status: 403 });
 
     const body = await req.json();
