@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
       try {
         for (const tg of trip.guides) {
           const isTripLeader = tg.guideId === trip.tripLeaderId;
-          const newFeeAmount = calculateGuideEarnings(trip.totalPax || 0, tg.guide.rank, isTripLeader);
+          const newFeeAmount = calculateGuideEarnings(trip.totalPax || 0, tg.guide.rank, isTripLeader, tg.guide.name);
 
           // Only update if the fee amount has changed
           const currentFeeAmount = parseFloat(tg.feeAmount?.toString() || '0');

@@ -88,7 +88,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
           if (!guide) throw new Error(`Guide not found: ${guideId}`);
           const paxCount = 0; // Can be updated later
           const isTripLeader = guideId === tripLeaderId;
-          const feeAmount = calculateGuideEarnings(totalPax || 0, guide.rank, isTripLeader);
+          const feeAmount = calculateGuideEarnings(totalPax || 0, guide.rank, isTripLeader, guide.name);
           return { guideId, paxCount, feeAmount };
         }) } : undefined,
       },
@@ -133,7 +133,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     const { calculateGuideEarnings } = await import('@/lib/guideEarnings');
     for (const tg of trip.guides) {
       const isTripLeader = tg.guideId === trip.tripLeaderId;
-      const feeAmount = calculateGuideEarnings(totalPax, tg.guide.rank, isTripLeader);
+      const feeAmount = calculateGuideEarnings(totalPax, tg.guide.rank, isTripLeader, tg.guide.name);
       await prisma.tripGuide.update({
         where: { id: tg.id },
         data: { feeAmount }

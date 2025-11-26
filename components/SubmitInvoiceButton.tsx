@@ -4,6 +4,7 @@ import { useState } from "react";
 export function SubmitInvoiceButton() {
   const [loading, setLoading] = useState(false);
   const [invoiceType, setInvoiceType] = useState<'weekly' | 'monthly'>('monthly');
+  const [tipAmount, setTipAmount] = useState<string>('0');
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -56,8 +57,13 @@ export function SubmitInvoiceButton() {
   const handleSubmit = async () => {
     const period = invoiceType === 'monthly' ? selectedMonth : selectedWeek;
     const periodLabel = invoiceType === 'monthly' ? selectedMonth : getWeekDateRange(selectedWeek);
+    const tip = parseFloat(tipAmount) || 0;
 
-    if (!confirm(`Submit ${invoiceType} invoice for ${periodLabel}?\n\nThis will send your invoice to the admin email.`)) {
+    const confirmMessage = tip > 0
+      ? `Submit ${invoiceType} invoice for ${periodLabel}?\n\nTip: R ${tip.toFixed(2)}\n\nThis will send your invoice to the admin email.`
+      : `Submit ${invoiceType} invoice for ${periodLabel}?\n\nThis will send your invoice to the admin email.`;
+
+    if (!confirm(confirmMessage)) {
       return;
     }
 
@@ -69,14 +75,20 @@ export function SubmitInvoiceButton() {
         body: JSON.stringify({
           invoiceType,
           month: invoiceType === 'monthly' ? selectedMonth : undefined,
-          week: invoiceType === 'weekly' ? selectedWeek : undefined
+          week: invoiceType === 'weekly' ? selectedWeek : undefined,
+          tipAmount: tip
         })
       });
 
       const data = await res.json();
 
       if (res.ok) {
-        alert(`✓ Invoice submitted successfully!\n\nTrips: ${data.tripCount}\nTotal Earnings: R ${data.totalEarnings?.toFixed(2)}\n\nThe invoice has been sent to the admin email.`);
+        const earningsDisplay = tip > 0
+          ? `Total Earnings: R ${data.totalEarnings?.toFixed(2)} (including R ${tip.toFixed(2)} tip)`
+          : `Total Earnings: R ${data.totalEarnings?.toFixed(2)}`;
+        alert(`✓ Invoice submitted successfully!\n\nTrips: ${data.tripCount}\n${earningsDisplay}\n\nThe invoice has been sent to the admin email.`);
+        // Reset tip after successful submission
+        setTipAmount('0');
       } else {
         alert(`Error: ${data.error || 'Failed to submit invoice'}`);
       }
@@ -151,6 +163,20 @@ export function SubmitInvoiceButton() {
                 )}
               </>
             )}
+          </div>
+          <div style={{ minWidth: 140 }}>
+            <label className="label" style={{ marginBottom: 6 }}>Tip (Optional)</label>
+            <input
+              type="number"
+              className="input"
+              value={tipAmount}
+              onChange={(e) => setTipAmount(e.target.value)}
+              disabled={loading}
+              placeholder="0.00"
+              step="0.01"
+              min="0"
+              style={{ textAlign: 'right' }}
+            />
           </div>
           <button
             onClick={handleSubmit}

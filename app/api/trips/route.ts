@@ -97,7 +97,7 @@ export async function POST(req: NextRequest) {
           if (!guide) throw new Error(`Guide not found: ${guideId}`);
           const paxCount = 0; // Can be updated later
           const isTripLeader = guideId === tripLeaderId;
-          const feeAmount = calculateGuideEarnings(totalPax || 0, guide.rank, isTripLeader);
+          const feeAmount = calculateGuideEarnings(totalPax || 0, guide.rank, isTripLeader, guide.name);
           return { guideId, paxCount, feeAmount };
         }) } : undefined,
       }

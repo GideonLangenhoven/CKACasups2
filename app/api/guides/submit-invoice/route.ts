@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
       return new Response('You are not linked to a guide profile', { status: 403 });
     }
 
-    const { invoiceType = 'monthly', month, week } = await req.json();
+    const { invoiceType = 'monthly', month, week, tipAmount = 0 } = await req.json();
 
     if (invoiceType === 'monthly' && !month) {
       return new Response('Month is required for monthly invoices', { status: 400 });
@@ -339,6 +339,28 @@ export async function POST(req: NextRequest) {
     );
 
     // Total
+    const tip = parseFloat(tipAmount?.toString() || '0');
+    const finalTotal = monthlyTotal + tip;
+
+    const totalTableBody: any[] = [
+      [
+        { text: 'Trip Earnings:', alignment: 'right', border: [false, false, false, false] },
+        { text: `R ${monthlyTotal.toFixed(2)}`, alignment: 'right', border: [false, false, false, false] }
+      ]
+    ];
+
+    if (tip > 0) {
+      totalTableBody.push([
+        { text: 'Tip:', alignment: 'right', border: [false, false, false, false] },
+        { text: `R ${tip.toFixed(2)}`, alignment: 'right', border: [false, false, false, false] }
+      ]);
+    }
+
+    totalTableBody.push([
+      { text: 'TOTAL EARNINGS:', bold: true, fontSize: 12, alignment: 'right', border: [false, true, false, false] },
+      { text: `R ${finalTotal.toFixed(2)}`, bold: true, fontSize: 14, color: '#059669', alignment: 'right', border: [false, true, false, false] }
+    ]);
+
     content.push(
       {
         columns: [
@@ -347,20 +369,15 @@ export async function POST(req: NextRequest) {
             width: 'auto',
             table: {
               widths: ['auto', 'auto'],
-              body: [
-                [
-                  { text: 'TOTAL EARNINGS:', bold: true, fontSize: 12, alignment: 'right', border: [false, true, false, false] },
-                  { text: `R ${monthlyTotal.toFixed(2)}`, bold: true, fontSize: 14, color: '#059669', alignment: 'right', border: [false, true, false, false] }
-                ]
-              ]
+              body: totalTableBody
             },
             layout: {
-              hLineWidth: (i: number) => i === 0 ? 2 : 0,
+              hLineWidth: (i: number, node: any) => (i === node.table.body.length - 1) ? 2 : 0,
               hLineColor: () => '#059669',
               paddingLeft: () => 8,
               paddingRight: () => 8,
-              paddingTop: () => 8,
-              paddingBottom: () => 8
+              paddingTop: () => 4,
+              paddingBottom: () => 4
             }
           }
         ],
@@ -398,10 +415,19 @@ export async function POST(req: NextRequest) {
 
     const periodForFilename = invoiceType === 'weekly' ? week.replace('/', '-') : month;
 
-    await sendEmail({
-      to: adminEmails,
-      subject: `${invoiceType === 'weekly' ? 'Weekly' : 'Monthly'} Invoice from ${userWithGuide.guide.name} - ${periodLabel}`,
-      html: `
+    const emailHtml = tip > 0
+      ? `
+        <h2>Guide Invoice Submission</h2>
+        <p><strong>Guide:</strong> ${userWithGuide.guide.name} (${userWithGuide.guide.rank})</p>
+        <p><strong>Type:</strong> ${invoiceType === 'weekly' ? 'Weekly' : 'Monthly'}</p>
+        <p><strong>Period:</strong> ${periodLabel}</p>
+        <p><strong>Total Trips:</strong> ${monthlyTripCount}</p>
+        <p><strong>Trip Earnings:</strong> R ${monthlyTotal.toFixed(2)}</p>
+        <p><strong>Tip:</strong> R ${tip.toFixed(2)}</p>
+        <p><strong>Total Earnings:</strong> R ${finalTotal.toFixed(2)}</p>
+        <p>Please find the detailed invoice attached.</p>
+      `
+      : `
         <h2>Guide Invoice Submission</h2>
         <p><strong>Guide:</strong> ${userWithGuide.guide.name} (${userWithGuide.guide.rank})</p>
         <p><strong>Type:</strong> ${invoiceType === 'weekly' ? 'Weekly' : 'Monthly'}</p>
@@ -409,7 +435,12 @@ export async function POST(req: NextRequest) {
         <p><strong>Total Trips:</strong> ${monthlyTripCount}</p>
         <p><strong>Total Earnings:</strong> R ${monthlyTotal.toFixed(2)}</p>
         <p>Please find the detailed invoice attached.</p>
-      `,
+      `;
+
+    await sendEmail({
+      to: adminEmails,
+      subject: `${invoiceType === 'weekly' ? 'Weekly' : 'Monthly'} Invoice from ${userWithGuide.guide.name} - ${periodLabel}`,
+      html: emailHtml,
       attachments: [
         {
           filename: `invoice-${userWithGuide.guide.name.replace(/\s+/g, '-')}-${periodForFilename}.pdf`,
@@ -428,14 +459,16 @@ export async function POST(req: NextRequest) {
       month: invoiceType === 'monthly' ? month : undefined,
       week: invoiceType === 'weekly' ? week : undefined,
       tripCount: monthlyTripCount,
-      totalEarnings: monthlyTotal
+      tripEarnings: monthlyTotal,
+      tip: tip,
+      totalEarnings: finalTotal
     });
 
     return Response.json({
       success: true,
       message: `Invoice for ${periodLabel} submitted successfully`,
       tripCount: monthlyTripCount,
-      totalEarnings: monthlyTotal
+      totalEarnings: finalTotal
     });
   } catch (error: any) {
     console.error('Submit invoice error:', error);

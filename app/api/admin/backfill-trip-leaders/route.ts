@@ -90,7 +90,8 @@ export async function GET(req: NextRequest) {
         const feeAmount = calculateGuideEarnings(
           trip.totalPax,
           tripLeader.rank as any,
-          true // is trip leader
+          true, // is trip leader
+          tripLeader.name
         );
 
         // Create the missing TripGuide record

@@ -24,13 +24,20 @@ const TRIP_LEADER_RATES: Record<GuideRank, number> = {
  * @param paxCount Total number of passengers (not used in flat rate system, kept for compatibility)
  * @param rank Guide's rank
  * @param isTripLeader Whether this guide is the trip leader
+ * @param guideName Optional guide name to check for special rates (e.g., "Leader")
  * @returns Earnings amount in Rands
  */
 export function calculateGuideEarnings(
   paxCount: number,
   rank: GuideRank,
-  isTripLeader: boolean = false
+  isTripLeader: boolean = false,
+  guideName?: string
 ): number {
+  // Special rate for guides with "Leader" in their name
+  if (guideName && guideName.toLowerCase().includes('leader')) {
+    return isTripLeader ? 820 : 740;
+  }
+
   // If trip leader, return rank-specific trip leader rate
   if (isTripLeader) {
     return TRIP_LEADER_RATES[rank] || 810;
@@ -45,14 +52,14 @@ export function calculateGuideEarnings(
  */
 export function calculateTripEarnings(
   paxCount: number,
-  guides: Array<{ id: string; rank: GuideRank }>,
+  guides: Array<{ id: string; rank: GuideRank; name?: string }>,
   tripLeaderId?: string | null
 ): Record<string, number> {
   const earnings: Record<string, number> = {};
 
   for (const guide of guides) {
     const isTripLeader = guide.id === tripLeaderId;
-    earnings[guide.id] = calculateGuideEarnings(paxCount, guide.rank, isTripLeader);
+    earnings[guide.id] = calculateGuideEarnings(paxCount, guide.rank, isTripLeader, guide.name);
   }
 
   return earnings;

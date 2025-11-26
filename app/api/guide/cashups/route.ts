@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
             const g = dbGuides.find(x => x.id === gid);
             if (!g) throw new Error(`Guide not found: ${gid}`);
             const isLeader = gid === tripLeaderId;
-            const feeAmount = calculateGuideEarnings(totalPax || 0, g.rank as any, isLeader);
+            const feeAmount = calculateGuideEarnings(totalPax || 0, g.rank as any, isLeader, g.name);
             return { guideId: gid, paxCount: 0, feeAmount };
           })
         } : undefined

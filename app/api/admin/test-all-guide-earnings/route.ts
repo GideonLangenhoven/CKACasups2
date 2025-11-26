@@ -126,7 +126,7 @@ export async function GET(req: NextRequest) {
           tripDate.setDate(tripDate.getDate() - i);
           const totalPax = 10 + (i * 2);
 
-          const earnings = calculateGuideEarnings(totalPax, guide.rank as any, true);
+          const earnings = calculateGuideEarnings(totalPax, guide.rank as any, true, guide.name);
 
           const trip = await prisma.trip.create({
             data: {
