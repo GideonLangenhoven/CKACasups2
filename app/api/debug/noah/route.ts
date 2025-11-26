@@ -27,7 +27,7 @@ export async function GET() {
     });
 
     // Find trips where Noah is trip leader
-    let tripsAsLeader = [];
+    let tripsAsLeader: any[] = [];
     if (noahGuide) {
       tripsAsLeader = await prisma.trip.findMany({
         where: {
@@ -47,7 +47,7 @@ export async function GET() {
     }
 
     // Find trips created by Noah's user account
-    let tripsCreated = [];
+    let tripsCreated: any[] = [];
     if (noahUser) {
       tripsCreated = await prisma.trip.findMany({
         where: {
