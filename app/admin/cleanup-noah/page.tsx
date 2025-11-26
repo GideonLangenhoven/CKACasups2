@@ -73,8 +73,9 @@ export default function CleanupNoahPage() {
     }
   }
 
-  async function linkUsersToGuide(guideId: string) {
-    if (!confirm('Link all Noah users to this guide profile?')) return;
+  async function renameGuide(guideId: string, currentName: string) {
+    const newName = prompt(`Rename guide from "${currentName}" to:`, 'Noah');
+    if (!newName || newName === currentName) return;
 
     setWorking(true);
     setMessage('');
@@ -82,12 +83,57 @@ export default function CleanupNoahPage() {
       const res = await fetch('/api/admin/cleanup-noah', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'link_user_to_guide', keepGuideId: guideId })
+        body: JSON.stringify({
+          action: 'rename_guide',
+          guideId: guideId,
+          newName: newName
+        })
       });
 
       const data = await res.json();
       if (res.ok) {
         setMessage(`✓ ${data.message}`);
+        await fetchData();
+      } else {
+        setMessage(`✗ Error: ${data.error}`);
+      }
+    } catch (error: any) {
+      setMessage(`✗ Error: ${error.message}`);
+    } finally {
+      setWorking(false);
+    }
+  }
+
+  async function linkUsersToGuide(guideId: string) {
+    // Prompt for which email to use as primary
+    const emailsFound = users.map(u => u.email).join('\n');
+    const primaryEmail = prompt(
+      `Multiple user accounts found:\n\n${emailsFound}\n\nWhich email does Noah actually use to log in?`
+    );
+
+    if (!primaryEmail) return;
+
+    if (!users.find(u => u.email === primaryEmail)) {
+      setMessage('✗ Error: Email not found in user accounts');
+      return;
+    }
+
+    setWorking(true);
+    setMessage('');
+    try {
+      const res = await fetch('/api/admin/cleanup-noah', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'link_user_to_guide',
+          keepGuideId: guideId,
+          primaryUserEmail: primaryEmail
+        })
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setMessage(`✓ ${data.message}${data.unlinkedOldUser ? `\n(Unlinked: ${data.unlinkedOldUser})` : ''}`);
         await fetchData();
       } else {
         setMessage(`✗ Error: ${data.error}`);
@@ -139,15 +185,24 @@ export default function CleanupNoahPage() {
                 <div>Trip Count (as guide): {guide.tripCount}</div>
                 <div>Trip Count (as leader): {guide.ledTripCount}</div>
               </div>
-              <div style={{ marginTop: '1rem', display: 'flex', gap: 8 }}>
+              <div style={{ marginTop: '1rem', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 {guide.rank === 'SENIOR' ? (
-                  <button
-                    className="btn"
-                    onClick={() => linkUsersToGuide(guide.id)}
-                    disabled={working}
-                  >
-                    ✓ Link Users to This Guide
-                  </button>
+                  <>
+                    <button
+                      className="btn ghost"
+                      onClick={() => renameGuide(guide.id, guide.name)}
+                      disabled={working}
+                    >
+                      ✏️ Rename Guide
+                    </button>
+                    <button
+                      className="btn"
+                      onClick={() => linkUsersToGuide(guide.id)}
+                      disabled={working}
+                    >
+                      ✓ Link Users to This Guide
+                    </button>
+                  </>
                 ) : (
                   <button
                     className="btn ghost"

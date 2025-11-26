@@ -116,39 +116,89 @@ export async function POST(req: Request) {
     }
 
     if (action === 'link_user_to_guide') {
-      // Find all Noah users and link them to the correct guide
-      const noahUsers = await prisma.user.findMany({
-        where: {
-          OR: [
-            { email: { contains: 'noah', mode: 'insensitive' } },
-            { name: { contains: 'Noah', mode: 'insensitive' } }
-          ]
-        }
-      });
+      const { primaryUserEmail } = await req.json();
+
+      if (!primaryUserEmail) {
+        return NextResponse.json({ error: 'primaryUserEmail is required' }, { status: 400 });
+      }
 
       const keepGuide = await prisma.guide.findUnique({
-        where: { id: keepGuideId }
+        where: { id: keepGuideId },
+        include: { user: true }
       });
 
       if (!keepGuide) {
         return NextResponse.json({ error: 'Guide not found' }, { status: 404 });
       }
 
-      // Update all Noah users to link to the correct guide
-      for (const user of noahUsers) {
+      // Find the primary user (the one Noah is actually using)
+      const primaryUser = await prisma.user.findUnique({
+        where: { email: primaryUserEmail }
+      });
+
+      if (!primaryUser) {
+        return NextResponse.json({ error: 'Primary user not found' }, { status: 404 });
+      }
+
+      // Step 1: Unlink any existing user from this guide (due to unique constraint)
+      if (keepGuide.user) {
         await prisma.user.update({
-          where: { id: user.id },
-          data: {
-            guideId: keepGuideId,
-            name: keepGuide.name  // Sync name
-          }
+          where: { id: keepGuide.user.id },
+          data: { guideId: null }
         });
+      }
+
+      // Step 2: Link the primary user to the guide
+      await prisma.user.update({
+        where: { id: primaryUser.id },
+        data: {
+          guideId: keepGuideId,
+          name: keepGuide.name  // Sync name to match guide
+        }
+      });
+
+      // Step 3: Update guide email to match primary user
+      await prisma.guide.update({
+        where: { id: keepGuideId },
+        data: { email: primaryUserEmail }
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: `Successfully linked ${primaryUserEmail} to guide ${keepGuide.name}`,
+        unlinkedOldUser: keepGuide.user ? keepGuide.user.email : null
+      });
+    }
+
+    if (action === 'rename_guide') {
+      const { guideId, newName } = await req.json();
+
+      if (!guideId || !newName) {
+        return NextResponse.json({ error: 'guideId and newName are required' }, { status: 400 });
+      }
+
+      const guide = await prisma.guide.update({
+        where: { id: guideId },
+        data: { name: newName.trim() }
+      });
+
+      // Also update any linked user's name
+      if (guide) {
+        const linkedUser = await prisma.user.findFirst({
+          where: { guideId: guideId }
+        });
+
+        if (linkedUser) {
+          await prisma.user.update({
+            where: { id: linkedUser.id },
+            data: { name: newName.trim() }
+          });
+        }
       }
 
       return NextResponse.json({
         success: true,
-        message: `Linked ${noahUsers.length} user(s) to guide ${keepGuide.name}`,
-        updated: noahUsers.length
+        message: `Guide renamed to "${newName.trim()}"`
       });
     }
 
