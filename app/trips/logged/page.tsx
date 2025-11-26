@@ -23,10 +23,13 @@ export default async function TripsLoggedPage() {
     );
   }
 
-  // Get trips where this user is the trip leader
+  // Get trips where this user is the creator or trip leader
   const trips = await prisma.trip.findMany({
     where: {
-      tripLeaderId: userWithGuide.guideId
+      OR: [
+        { createdById: user.id },
+        { tripLeaderId: userWithGuide.guideId }
+      ]
     },
     orderBy: { tripDate: "desc" },
     include: {
@@ -41,13 +44,13 @@ export default async function TripsLoggedPage() {
       <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
         <h2>Trips Logged</h2>
         <div style={{ fontSize: '0.9rem', color: '#666' }}>
-          Showing trips where you are the trip leader
+          Trips you created or where you are the trip leader
         </div>
       </div>
 
       {trips.length === 0 ? (
         <div className="card">
-          <p>No trips found where you are the trip leader.</p>
+          <p>No trips found that you created or where you are the trip leader.</p>
         </div>
       ) : (
         trips.map((t: any) => (

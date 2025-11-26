@@ -69,12 +69,15 @@ export default function EditTripPage() {
         const data = await res.json();
         const trip = data.trip;
 
-        // Check if current user is the trip leader
+        // Check if current user can edit (trip creator or trip leader)
         const currentUserRes = await fetch('/api/auth/session');
         const currentUserData = await currentUserRes.json();
 
-        if (!currentUserData.user?.guideId || trip.tripLeaderId !== currentUserData.user.guideId) {
-          alert('You can only edit trips where you are the trip leader');
+        const isCreator = trip.createdById === currentUserData.user?.id;
+        const isTripLeader = currentUserData.user?.guideId && trip.tripLeaderId === currentUserData.user.guideId;
+
+        if (!isCreator && !isTripLeader) {
+          alert('You can only edit trips that you created or where you are the trip leader');
           router.push('/trips/logged');
           return;
         }
