@@ -19,14 +19,21 @@ export default async function EarningsPage() {
     return <div className="stack"><div className="card">You are not linked to a guide profile.</div></div>;
   }
 
-  // Get all trips for this guide
+  // Get all trips for this guide (where they're a guide OR where they created the trip)
   const trips = await prisma.trip.findMany({
     where: {
-      guides: {
-        some: {
-          guideId: userWithGuide.guideId
+      OR: [
+        {
+          guides: {
+            some: {
+              guideId: userWithGuide.guideId
+            }
+          }
+        },
+        {
+          createdById: user.id
         }
-      }
+      ]
     },
     include: {
       guides: {
