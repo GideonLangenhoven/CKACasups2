@@ -280,7 +280,7 @@ export default function NewTripPage() {
             <button className="btn ghost" onClick={()=>setStep(2)}>Back</button>
             <div className="row" style={{ gap: 8 }}>
               <button className="btn ghost" onClick={()=>submit("DRAFT")}>Save Draft</button>
-              <button className="btn" onClick={()=>submit("SUBMITTED")}>Submit</button>
+              <button className="btn" onClick={()=>submit("APPROVED")}>Submit</button>
             </div>
           </div>
         </div>

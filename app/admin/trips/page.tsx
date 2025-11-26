@@ -27,16 +27,6 @@ export default function AdminTripsPage() {
   const trips = data?.trips || [];
   const [updating, setUpdating] = useState<string | null>(null);
 
-  async function setStatus(id: string, status: string) {
-    setUpdating(id);
-    try {
-      const res = await fetch(`/api/trips/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status }) });
-      if (!res.ok) throw new Error(await res.text());
-      mutate();
-    } catch (e: any) { alert(e.message); }
-    finally { setUpdating(null); }
-  }
-
   async function deleteTrip(id: string, leadName: string, tripDate: string) {
     if (!confirm(`Are you sure you want to DELETE this trip?\n\nLead: ${leadName}\nDate: ${new Date(tripDate).toLocaleDateString()}\n\nThis action cannot be undone.`)) {
       return;
@@ -54,25 +44,9 @@ export default function AdminTripsPage() {
     }
   }
 
-  const submittedCount = trips.filter((t: any) => t.status === 'SUBMITTED').length;
-
   return (
     <div className="stack">
       <AdminNav />
-      {submittedCount > 0 && (
-        <div className="card" style={{
-          backgroundColor: '#dbeafe',
-          borderLeft: '4px solid #2563eb',
-          padding: '16px'
-        }}>
-          <div style={{ fontWeight: 600, color: '#1e40af', marginBottom: 4 }}>
-            {submittedCount} trip{submittedCount !== 1 ? 's' : ''} awaiting review
-          </div>
-          <div style={{ fontSize: '0.9rem', color: '#1e3a8a' }}>
-            Click "Review & Edit" to view and approve submitted trips
-          </div>
-        </div>
-      )}
       <div className="card">
         <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
           <input className="input" placeholder="Search lead name" value={lead} onChange={e=>setLead(e.target.value)} style={{ maxWidth: 240 }} />
@@ -86,64 +60,31 @@ export default function AdminTripsPage() {
         </div>
       </div>
       {isLoading ? <div className="card">Loading...</div> : trips.map((t: any) => (
-        <div key={t.id} className="card" style={{
-          borderLeft: t.status === 'SUBMITTED' ? '4px solid #2563eb' : undefined,
-          backgroundColor: t.status === 'SUBMITTED' ? '#f0f9ff' : undefined
-        }}>
+        <div key={t.id} className="card">
           <div style={{ marginBottom: '12px' }}>
             <div className="row" style={{ alignItems: 'center', gap: 8 }}>
               <strong>{new Date(t.tripDate).toLocaleDateString()}</strong>
               <span>—</span>
               <span>{t.leadName}</span>
-              {t.status === 'SUBMITTED' && (
-                <span style={{
-                  fontSize: '0.75rem',
-                  padding: '3px 8px',
-                  backgroundColor: '#2563eb',
-                  color: 'white',
-                  borderRadius: '12px',
-                  fontWeight: 600
-                }}>
-                  NEEDS REVIEW
-                </span>
-              )}
             </div>
             <div style={{ color: '#666', fontSize: '0.9rem' }}>Status: {t.status} | Pax: {t.totalPax}</div>
           </div>
-          <div style={{ marginBottom: '8px' }}>
-            <div style={{ fontWeight: 500, marginBottom: '6px', fontSize: '0.9rem' }}>Change Status:</div>
-            <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
-              {['APPROVED','REJECTED','LOCKED'].map(s => (
-                <button
-                  key={s}
-                  className={t.status === s ? "btn" : "btn ghost"}
-                  disabled={updating===t.id || t.status === s}
-                  onClick={()=>setStatus(t.id, s)}
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div>
-            <div style={{ fontWeight: 500, marginBottom: '6px', fontSize: '0.9rem' }}>Actions:</div>
-            <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
-              <a
-                href={`/admin/trips/${t.id}`}
-                className="btn secondary"
-                style={{ textDecoration: 'none' }}
-              >
-                Review & Edit
-              </a>
-              <button
-                className="btn ghost"
-                disabled={updating===t.id}
-                onClick={()=>deleteTrip(t.id, t.leadName, t.tripDate)}
-                style={{ borderColor: '#dc2626', color: '#dc2626' }}
-              >
-                Delete
-              </button>
-            </div>
+          <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
+            <a
+              href={`/admin/trips/${t.id}`}
+              className="btn"
+              style={{ textDecoration: 'none' }}
+            >
+              Review & Edit
+            </a>
+            <button
+              className="btn ghost"
+              disabled={updating===t.id}
+              onClick={()=>deleteTrip(t.id, t.leadName, t.tripDate)}
+              style={{ borderColor: '#dc2626', color: '#dc2626' }}
+            >
+              Delete
+            </button>
           </div>
         </div>
       ))}

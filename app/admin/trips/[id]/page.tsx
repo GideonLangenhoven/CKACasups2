@@ -32,19 +32,17 @@ export default function AdminTripReviewPage() {
     }
   }
 
-  async function updateStatus(newStatus: string) {
-    if (!confirm(`Are you sure you want to change status to ${newStatus}?`)) return;
+  async function deleteTrip() {
+    if (!confirm(`Are you sure you want to DELETE this trip?\n\nLead: ${trip.leadName}\nDate: ${new Date(trip.tripDate).toLocaleDateString()}\n\nThis action cannot be undone.`)) {
+      return;
+    }
 
     setUpdating(true);
     try {
-      const res = await fetch(`/api/trips/${tripId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus })
-      });
+      const res = await fetch(`/api/trips/${tripId}`, { method: 'DELETE' });
       if (!res.ok) throw new Error(await res.text());
-      await loadTrip();
-      alert(`Trip status updated to ${newStatus}`);
+      alert('Trip deleted successfully');
+      router.push('/admin/trips');
     } catch (e: any) {
       alert('Error: ' + e.message);
     } finally {
@@ -106,60 +104,16 @@ export default function AdminTripReviewPage() {
 
         <div className="row" style={{ gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
           <Link href={`/admin/trips/${tripId}/edit`} className="btn">
-            Edit Cash Up
+            Review & Edit
           </Link>
-          <a href={`/api/trips/${tripId}/pdf`} className="btn ghost">
-            Download PDF
-          </a>
-          <Link href={`/trips/${tripId}`} className="btn ghost">
-            View Details
-          </Link>
-        </div>
-
-        <div style={{
-          padding: '16px',
-          backgroundColor: '#f3f4f6',
-          borderRadius: '8px',
-          marginBottom: 24
-        }}>
-          <div style={{ fontWeight: 600, marginBottom: 12, fontSize: '1rem' }}>
-            Manage Trip Status
-          </div>
-          <div style={{ marginBottom: 12, color: '#64748b', fontSize: '0.9rem' }}>
-            Trips are automatically approved when logged. You can change the status if needed.
-          </div>
-          <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
-            <button
-              className="btn"
-              disabled={updating || trip.status === 'APPROVED'}
-              onClick={() => updateStatus('APPROVED')}
-              style={{ backgroundColor: '#16a34a', borderColor: '#16a34a' }}
-            >
-              ✓ Approve
-            </button>
-            <button
-              className="btn ghost"
-              disabled={updating || trip.status === 'REJECTED'}
-              onClick={() => updateStatus('REJECTED')}
-              style={{ borderColor: '#dc2626', color: '#dc2626' }}
-            >
-              ✗ Reject
-            </button>
-            <button
-              className="btn ghost"
-              disabled={updating || trip.status === 'LOCKED'}
-              onClick={() => updateStatus('LOCKED')}
-            >
-              🔒 Lock
-            </button>
-            <button
-              className="btn ghost"
-              disabled={updating || trip.status === 'DRAFT'}
-              onClick={() => updateStatus('DRAFT')}
-            >
-              📝 Set to Draft
-            </button>
-          </div>
+          <button
+            className="btn ghost"
+            disabled={updating}
+            onClick={deleteTrip}
+            style={{ borderColor: '#dc2626', color: '#dc2626' }}
+          >
+            Delete
+          </button>
         </div>
       </div>
 
