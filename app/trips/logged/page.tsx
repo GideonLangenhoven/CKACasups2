@@ -12,24 +12,19 @@ export default async function TripsLoggedPage() {
     select: { guideId: true, role: true }
   });
 
-  if (!userWithGuide?.guideId) {
-    return (
-      <div className="stack">
-        <div className="card">
-          <h2>Trips Logged</h2>
-          <p>You are not linked to a guide account. Only trip leaders can view and edit trips here.</p>
-        </div>
-      </div>
-    );
+  // Get trips where this user is the creator or trip leader
+  const whereConditions: any[] = [
+    { createdById: user.id }
+  ];
+
+  // Only add tripLeaderId condition if user has a guideId
+  if (userWithGuide?.guideId) {
+    whereConditions.push({ tripLeaderId: userWithGuide.guideId });
   }
 
-  // Get trips where this user is the creator or trip leader
   const trips = await prisma.trip.findMany({
     where: {
-      OR: [
-        { createdById: user.id },
-        { tripLeaderId: userWithGuide.guideId }
-      ]
+      OR: whereConditions
     },
     orderBy: { tripDate: "desc" },
     include: {
